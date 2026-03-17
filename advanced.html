@@ -711,6 +711,32 @@
           <button id="bg-image-clear">✕ Clear Image</button>
         </div>
 
+        <div style="padding-top:16px;">
+          <h3
+            style="color:#999;font-size:11px;margin-bottom:14px;text-transform:uppercase;letter-spacing:1.5px;font-weight:600;">
+            AI &amp; Debug</h3>
+          <div class="toggle-row">
+            <div>
+              <div class="toggle-label">Smart Pathfinding</div>
+              <div class="toggle-desc">A* navigation around obstacles (uses more CPU)</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="toggle-pathfinding">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          <div class="toggle-row">
+            <div>
+              <div class="toggle-label">Direction Indicators</div>
+              <div class="toggle-desc">Show arrows for each stickman's heading</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="toggle-directions">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        </div>
+
       </div>
     </div>
   </div>
@@ -764,6 +790,10 @@
     let mapDragging = false;
     let mapDragStart = null;
     let mapDragCurrent = null;
+
+    // ─── Pathfinding & debug settings ─────────────────────────────────────
+    let smartPathfinding = false;
+    let showDirections = false;
 
     const SIDE_ZONES = {
       red: { xMin: 0, xMax: 0.5, yMin: 0, yMax: 1 },
@@ -897,6 +927,157 @@
       return groups[s.groupId] ? groups[s.groupId].size : 1;
     }
 
+    // ─── Navigation grid & A* pathfinding ─────────────────────────────────
+    const NAV_CELL = 20;         // grid cell size in px
+    let navGrid = null;          // 2D array: 0=walkable, 1=wall, 2=hazard, 3=water
+    let navW = 0, navH = 0;
+    let navDirty = true;         // rebuild when map elements change
+
+    function rebuildNavGrid() {
+      navW = Math.ceil(canvas.width / NAV_CELL);
+      navH = Math.ceil(canvas.height / NAV_CELL);
+      navGrid = new Uint8Array(navW * navH); // 0 = open
+      const pad = 4;
+      for (const el of mapElements) {
+        const x0 = Math.max(0, Math.floor((el.x - pad) / NAV_CELL));
+        const y0 = Math.max(0, Math.floor((el.y - pad) / NAV_CELL));
+        const x1 = Math.min(navW - 1, Math.floor((el.x + el.w + pad) / NAV_CELL));
+        const y1 = Math.min(navH - 1, Math.floor((el.y + el.h + pad) / NAV_CELL));
+        const val = el.type === 'wall' ? 1 : el.type === 'hazard' ? 2 : 3;
+        for (let gy = y0; gy <= y1; gy++) {
+          for (let gx = x0; gx <= x1; gx++) {
+            const cur = navGrid[gy * navW + gx];
+            if (val === 1 || cur === 0) navGrid[gy * navW + gx] = val; // wall always wins
+          }
+        }
+      }
+      navDirty = false;
+    }
+
+    // A* with a budget cap for performance
+    const A_STAR_BUDGET = 400; // max nodes explored per query
+    function astarPath(sx, sy, ex, ey) {
+      if (!navGrid) return null;
+      const sgx = Math.floor(sx / NAV_CELL), sgy = Math.floor(sy / NAV_CELL);
+      const egx = Math.floor(ex / NAV_CELL), egy = Math.floor(ey / NAV_CELL);
+      if (sgx < 0 || sgy < 0 || sgx >= navW || sgy >= navH) return null;
+      if (egx < 0 || egy < 0 || egx >= navW || egy >= navH) return null;
+      // If target is inside a wall, nudge to nearest open cell
+      let destX = egx, destY = egy;
+      if (navGrid[destY * navW + destX] === 1) {
+        let found = false;
+        for (let r = 1; r < 8 && !found; r++) {
+          for (let dy = -r; dy <= r && !found; dy++) {
+            for (let dx = -r; dx <= r && !found; dx++) {
+              const nx = egx + dx, ny = egy + dy;
+              if (nx >= 0 && ny >= 0 && nx < navW && ny < navH && navGrid[ny * navW + nx] !== 1) {
+                destX = nx; destY = ny; found = true;
+              }
+            }
+          }
+        }
+        if (!found) return null;
+      }
+      const startKey = sgy * navW + sgx;
+      const endKey = destY * navW + destX;
+      if (startKey === endKey) return null; // already there
+
+      // Costs: wall=impassable, hazard=high cost, water=moderate cost, open=1
+      const COST = [1, Infinity, 25, 3]; // indexed by navGrid value
+
+      // Min-heap via sorted array (sufficient for small budgets)
+      const gScore = new Map();
+      const fScore = new Map();
+      const cameFrom = new Map();
+      const heuristic = (k) => {
+        const kx = k % navW, ky = (k / navW) | 0;
+        return (Math.abs(kx - destX) + Math.abs(ky - destY)) * 1.01;
+      };
+
+      gScore.set(startKey, 0);
+      fScore.set(startKey, heuristic(startKey));
+
+      // Binary heap for open set
+      const heap = [startKey];
+      const inOpen = new Set([startKey]);
+      const closed = new Set();
+
+      const swap = (a, b) => { const t = heap[a]; heap[a] = heap[b]; heap[b] = t; };
+      const bubbleUp = (i) => {
+        while (i > 0) {
+          const p = (i - 1) >> 1;
+          if ((fScore.get(heap[i]) || 0) < (fScore.get(heap[p]) || 0)) { swap(i, p); i = p; } else break;
+        }
+      };
+      const sinkDown = (i) => {
+        const n = heap.length;
+        while (true) {
+          let s = i, l = 2 * i + 1, r = 2 * i + 2;
+          if (l < n && (fScore.get(heap[l]) || 0) < (fScore.get(heap[s]) || 0)) s = l;
+          if (r < n && (fScore.get(heap[r]) || 0) < (fScore.get(heap[s]) || 0)) s = r;
+          if (s !== i) { swap(i, s); i = s; } else break;
+        }
+      };
+
+      let explored = 0;
+      const DIRS = [[-1, 0], [1, 0], [0, -1], [0, 1], [-1, -1], [-1, 1], [1, -1], [1, 1]];
+      const DCOST = [1, 1, 1, 1, 1.414, 1.414, 1.414, 1.414];
+
+      while (heap.length > 0 && explored < A_STAR_BUDGET) {
+        // Pop min
+        const current = heap[0];
+        heap[0] = heap[heap.length - 1]; heap.pop(); if (heap.length > 0) sinkDown(0);
+        inOpen.delete(current);
+
+        if (current === endKey) {
+          // Reconstruct path — return the next waypoint after start
+          const path = [];
+          let c = current;
+          while (cameFrom.has(c)) { path.push(c); c = cameFrom.get(c); }
+          path.reverse();
+          // Return the waypoint a few steps ahead for smoother movement
+          const step = Math.min(2, path.length - 1);
+          const wpKey = path[Math.max(0, step)];
+          return {
+            x: (wpKey % navW) * NAV_CELL + NAV_CELL / 2,
+            y: ((wpKey / navW) | 0) * NAV_CELL + NAV_CELL / 2,
+          };
+        }
+
+        closed.add(current);
+        explored++;
+
+        const cx = current % navW, cy = (current / navW) | 0;
+        for (let d = 0; d < 8; d++) {
+          const nx = cx + DIRS[d][0], ny = cy + DIRS[d][1];
+          if (nx < 0 || ny < 0 || nx >= navW || ny >= navH) continue;
+          const nk = ny * navW + nx;
+          if (closed.has(nk)) continue;
+          const cellCost = COST[navGrid[nk]];
+          if (cellCost === Infinity) continue; // wall
+          // Diagonal: check L-shape clearance
+          if (d >= 4) {
+            if (navGrid[cy * navW + nx] === 1 || navGrid[ny * navW + cx] === 1) continue;
+          }
+          const tentG = (gScore.get(current) || 0) + DCOST[d] * cellCost;
+          if (tentG < (gScore.get(nk) ?? Infinity)) {
+            cameFrom.set(nk, current);
+            gScore.set(nk, tentG);
+            fScore.set(nk, tentG + heuristic(nk));
+            if (!inOpen.has(nk)) {
+              heap.push(nk); inOpen.add(nk);
+              bubbleUp(heap.length - 1);
+            }
+          }
+        }
+      }
+      return null; // no path found within budget
+    }
+
+    // Stagger pathfinding across frames to avoid spikes
+    let pfFrameCounter = 0;
+    const PF_INTERVAL = 8; // recalc path every N frames per stickman
+
     // ─── Line-of-sight & obstacle helpers ─────────────────────────────────
     function lineHitsRect(x1, y1, x2, y2, rx, ry, rw, rh) {
       // Check if line segment (x1,y1)→(x2,y2) intersects rect
@@ -961,6 +1142,10 @@
 
     // ─── AI & movement ──────────────────────────────────────────────────
     function updateAI(dt) {
+      pfFrameCounter++;
+      // Rebuild nav grid if dirty and pathfinding is on
+      if (smartPathfinding && navDirty) rebuildNavGrid();
+
       const curAttackRange = shapeMode === 'circles' ? circleRadius * 2 + 2 : ATTACK_RANGE;
       for (const s of stickmen) {
         // Find nearest enemy — prefer reachable ones (no wall between)
@@ -994,7 +1179,6 @@
           const d = Math.sqrt(dx * dx + dy * dy) || 1;
           s.vx = (dx / d) * FLEE_SPEED;
           s.vy = (dy / d) * FLEE_SPEED;
-          // Flee also steers around obstacles
           const steer = getObstacleSteering(s, s.x + s.vx * 20, s.y + s.vy * 20, FLEE_SPEED);
           s.vx += steer.steerX * 0.5;
           s.vy += steer.steerY * 0.5;
@@ -1005,13 +1189,29 @@
         // Move toward chosen enemy
         if (chosenDist > curAttackRange) {
           s.state = 'moving';
-          const dx = chosenEnemy.x - s.x, dy = chosenEnemy.y - s.y;
+
+          let goalX = chosenEnemy.x, goalY = chosenEnemy.y;
+
+          // A* pathfinding: compute waypoint if enabled and obstacles exist
+          if (smartPathfinding && mapElements.length > 0) {
+            // Stagger: only recalc every PF_INTERVAL frames per stickman
+            if ((pfFrameCounter + s.id) % PF_INTERVAL === 0 || !s._wp) {
+              const wp = astarPath(s.x, s.y, chosenEnemy.x, chosenEnemy.y);
+              s._wp = wp; // cache waypoint
+            }
+            if (s._wp) {
+              goalX = s._wp.x;
+              goalY = s._wp.y;
+            }
+          }
+
+          const dx = goalX - s.x, dy = goalY - s.y;
           const d = Math.sqrt(dx * dx + dy * dy) || 1;
           let moveX = (dx / d) * SPEED;
           let moveY = (dy / d) * SPEED;
 
-          // Obstacle steering — steer around walls and hazards
-          const steer = getObstacleSteering(s, chosenEnemy.x, chosenEnemy.y, SPEED);
+          // Obstacle steering still useful as a safety net
+          const steer = getObstacleSteering(s, goalX, goalY, SPEED);
           moveX += steer.steerX;
           moveY += steer.steerY;
 
@@ -1292,6 +1492,32 @@
       for (const c of corpses) drawFn(c, c.fadeT / DEATH_FADE_DUR * 0.6);
       for (const s of stickmen) drawFn(s, 1);
 
+      // Direction indicators
+      if (showDirections) {
+        ctx.save();
+        ctx.lineWidth = 1.5;
+        ctx.globalAlpha = 0.5;
+        for (const s of stickmen) {
+          if (s.state === 'idle') continue;
+          const len = 18;
+          const vd = Math.sqrt(s.vx * s.vx + s.vy * s.vy) || 1;
+          const ax = s.x + (s.vx / vd) * len;
+          const ay = s.y + (s.vy / vd) * len;
+          const c = COLOURS[s.colour];
+          ctx.strokeStyle = c.fill;
+          ctx.beginPath(); ctx.moveTo(s.x, s.y); ctx.lineTo(ax, ay); ctx.stroke();
+          // Arrowhead
+          const headLen = 5, angle = Math.atan2(s.vy, s.vx);
+          ctx.beginPath();
+          ctx.moveTo(ax, ay);
+          ctx.lineTo(ax - headLen * Math.cos(angle - 0.5), ay - headLen * Math.sin(angle - 0.5));
+          ctx.moveTo(ax, ay);
+          ctx.lineTo(ax - headLen * Math.cos(angle + 0.5), ay - headLen * Math.sin(angle + 0.5));
+          ctx.stroke();
+        }
+        ctx.restore();
+      }
+
       // Drag preview
       if (mapDragging && mapDragStart && mapDragCurrent && mapMakerTool !== 'eraser') {
         const rx = Math.min(mapDragStart.x, mapDragCurrent.x);
@@ -1487,6 +1713,7 @@
           const el = mapElements[i];
           if (pos.x >= el.x && pos.x <= el.x + el.w && pos.y >= el.y && pos.y <= el.y + el.h) {
             mapElements.splice(i, 1);
+            navDirty = true;
             break;
           }
         }
@@ -1512,6 +1739,7 @@
       const rh = Math.abs(mapDragCurrent.y - mapDragStart.y);
       if (rw >= 10 && rh >= 10) {
         mapElements.push({ type: mapMakerTool, x: rx, y: ry, w: rw, h: rh });
+        navDirty = true;
       }
       mapDragStart = null;
       mapDragCurrent = null;
@@ -1599,6 +1827,7 @@
 
     document.getElementById('map-clear-btn').addEventListener('click', () => {
       mapElements.length = 0;
+      navDirty = true;
     });
 
     // ─── Advanced toggle ─────────────────────────────────────────────────
@@ -1674,6 +1903,16 @@
       bgImage = null;
       bgImageInput.value = '';
       bgImageClear.style.display = 'none';
+    });
+
+    // ─── AI & Debug toggles ──────────────────────────────────────────────
+    document.getElementById('toggle-pathfinding').addEventListener('change', (e) => {
+      smartPathfinding = e.target.checked;
+      if (smartPathfinding) { navDirty = true; rebuildNavGrid(); }
+    });
+
+    document.getElementById('toggle-directions').addEventListener('change', (e) => {
+      showDirections = e.target.checked;
     });
   </script>
 </body>
