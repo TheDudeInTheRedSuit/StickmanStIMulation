@@ -49,6 +49,7 @@
       gap: 1.5rem;
       justify-content: center;
       flex-wrap: wrap;
+      align-items: center;
     }
 
     .links a {
@@ -66,6 +67,7 @@
       font-weight: 500;
       transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
       min-width: 200px;
+      position: relative;
     }
 
     .links a:hover {
@@ -87,6 +89,50 @@
       color: #666;
       font-weight: 400;
     }
+
+    .links a.featured {
+      padding: 3rem 3.5rem;
+      border-radius: 20px;
+      background: #1a1a2e;
+      border: 2px solid #48dbfb;
+      box-shadow: 0 0 40px rgba(72, 219, 251, 0.2), 0 16px 50px rgba(0, 0, 0, 0.4);
+      transform: scale(1.08);
+      z-index: 1;
+      min-width: 240px;
+    }
+
+    .links a.featured:hover {
+      transform: scale(1.08) translateY(-4px);
+      box-shadow: 0 0 60px rgba(72, 219, 251, 0.35), 0 20px 60px rgba(0, 0, 0, 0.5);
+    }
+
+    .links a.featured .icon {
+      font-size: 3.2rem;
+    }
+
+    .links a.featured .label {
+      font-size: 1.4rem;
+    }
+
+    .links a.featured .desc {
+      font-size: 0.9rem;
+    }
+
+    .badge {
+      position: absolute;
+      top: -14px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: linear-gradient(90deg, #48dbfb, #a29bfe);
+      color: #0f0f1a;
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 0.25rem 0.9rem;
+      border-radius: 20px;
+      white-space: nowrap;
+    }
   </style>
 </head>
 
@@ -95,15 +141,16 @@
     <h1>Stickman StIMulation</h1>
     <p class="subtitle">Pick your battlefield</p>
     <div class="links">
-      <a href="/og">
+      <a href="/advanced">
+        <span class="icon">🧪</span>
+        <span class="label">Advanced Game</span>
+        <span class="desc">New features &amp; modes</span>
+      </a>
+      <a href="/og" class="featured">
+        <span class="badge">Best for First timers</span>
         <span class="icon">⚔️</span>
         <span class="label">OG Game</span>
         <span class="desc">The original classic</span>
-      </a>
-      <a href="/advanced">
-        <span class="icon">🧪</span>
-        <span class="label">Advanced Game (experimental)</span>
-        <span class="desc">New features &amp; modes</span>
       </a>
       <a href="https://gambling.thekoopa.com">
         <span class="icon">🎰</span>
