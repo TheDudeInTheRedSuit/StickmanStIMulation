@@ -60,6 +60,66 @@
   #pause-btn:hover { background: rgba(255,255,255,0.1); }
   #pause-btn.active { background: rgba(255,165,0,0.25); border-color: orange; color: #fff; }
   #clear-btn:hover { background: rgba(255,255,255,0.1); }
+  #settings-btn {
+    border: 1px solid #888; border-radius: 8px; padding: 8px 16px;
+    font-size: 14px; cursor: pointer; color: #ccc; background: transparent;
+    margin-left: 6px; transition: background .15s;
+  }
+  #settings-btn:hover { background: rgba(255,255,255,0.1); }
+  #settings-overlay {
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.4); z-index: 20; display: none;
+  }
+  #settings-overlay.open { display: block; }
+  #settings-panel {
+    position: fixed; top: 0; right: -360px; bottom: 0; width: 340px;
+    background: #1e1e2e; border-left: 1px solid #333;
+    z-index: 30; padding: 20px; overflow-y: auto;
+    transition: right 0.3s ease;
+    font-family: 'Segoe UI', Arial, sans-serif;
+  }
+  #settings-panel.open { right: 0; }
+  #settings-panel h2 {
+    color: #fff; font-size: 18px; margin-bottom: 16px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  #settings-close {
+    background: none; border: none; color: #aaa; font-size: 22px;
+    cursor: pointer; padding: 4px 8px; line-height: 1;
+  }
+  #settings-close:hover { color: #fff; }
+  .settings-section {
+    margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid #333;
+  }
+  .settings-section:last-child { border-bottom: none; }
+  .settings-section h3 {
+    color: #ccc; font-size: 13px; margin-bottom: 10px;
+    text-transform: uppercase; letter-spacing: 1px;
+  }
+  .colour-row {
+    display: flex; align-items: center; gap: 10px; margin-bottom: 8px;
+  }
+  .colour-row label { color: #aaa; font-size: 13px; width: 60px; text-transform: capitalize; }
+  .colour-row input[type="color"] {
+    width: 36px; height: 28px; border: 1px solid #555;
+    border-radius: 4px; background: transparent; cursor: pointer; padding: 0;
+  }
+  .settings-row {
+    display: flex; align-items: center; gap: 10px; margin-bottom: 10px;
+  }
+  .settings-row label { color: #aaa; font-size: 13px; min-width: 80px; }
+  .settings-row select {
+    flex: 1; padding: 6px 10px; border-radius: 6px;
+    background: #2a2a3e; color: #fff; border: 1px solid #555;
+    font-size: 13px; cursor: pointer;
+  }
+  .settings-row input[type="range"] { flex: 1; accent-color: #3498db; }
+  .size-value { color: #fff; font-size: 13px; min-width: 30px; text-align: right; }
+  .exp-badge {
+    display: inline-block; background: #e67e22; color: #fff;
+    font-size: 10px; padding: 2px 6px; border-radius: 4px;
+    margin-left: 6px; font-weight: 700; vertical-align: middle;
+  }
 </style>
 </head>
 <body>
@@ -77,6 +137,44 @@
   <button id="spawn-all-btn">Spawn All</button>
   <button id="pause-btn">⏸ Pause</button>
   <button id="clear-btn">Clear All</button>
+  <button id="settings-btn">⚙ Settings</button>
+</div>
+<div id="settings-overlay"></div>
+<div id="settings-panel">
+  <h2>Settings <button id="settings-close">✕</button></h2>
+  <div class="settings-section">
+    <h3>Team Colours</h3>
+    <div class="colour-row"><label>Red</label><input type="color" id="colour-red" value="#e74c3c"></div>
+    <div class="colour-row"><label>Blue</label><input type="color" id="colour-blue" value="#3498db"></div>
+    <div class="colour-row"><label>Green</label><input type="color" id="colour-green" value="#2ecc71"></div>
+    <div class="colour-row"><label>Yellow</label><input type="color" id="colour-yellow" value="#f1c40f"></div>
+  </div>
+  <div class="settings-section">
+    <h3>Shape Mode</h3>
+    <div class="settings-row">
+      <label>Shape</label>
+      <select id="shape-mode">
+        <option value="stickman" selected>Stickmen (Default)</option>
+        <option value="circles">Circles</option>
+        <option value="liquid">Liquid 🧪</option>
+      </select>
+    </div>
+  </div>
+  <div class="settings-section" id="circle-settings" style="display:none;">
+    <h3>Circle Settings</h3>
+    <div class="settings-row">
+      <label>Size</label>
+      <input type="range" id="circle-size" min="4" max="20" value="8">
+      <span class="size-value" id="circle-size-val">8</span>
+    </div>
+  </div>
+  <div class="settings-section" id="liquid-settings" style="display:none;">
+    <h3>Liquid Mode <span class="exp-badge">EXPERIMENTAL</span></h3>
+    <p style="color:#777;font-size:12px;margin-top:6px;line-height:1.5;">
+      Metaball-based liquid rendering. Entities merge into fluid blobs per team.
+      Performance may vary with large entity counts.
+    </p>
+  </div>
 </div>
 <canvas id="arena"></canvas>
 
@@ -104,6 +202,30 @@ const HP_BAR_W       = 20;
 const HP_BAR_H       = 3;
 const UI_TOP_MARGIN  = 52;
 const DEATH_FADE_DUR = 0.35;  // seconds
+
+// ─── Settings state ──────────────────────────────────────────────────
+let shapeMode    = 'stickman'; // 'stickman' | 'circles' | 'liquid'
+let circleRadius = 8;
+
+function hexToRgb(hex) {
+  return {
+    r: parseInt(hex.slice(1, 3), 16),
+    g: parseInt(hex.slice(3, 5), 16),
+    b: parseInt(hex.slice(5, 7), 16),
+  };
+}
+
+function darkenHex(hex, amount) {
+  const { r, g, b } = hexToRgb(hex);
+  const d = 1 - amount;
+  const clamp = v => Math.max(0, Math.min(255, Math.round(v * d)));
+  return `rgb(${clamp(r)},${clamp(g)},${clamp(b)})`;
+}
+
+function isLightColour(hex) {
+  const { r, g, b } = hexToRgb(hex);
+  return (r * 299 + g * 587 + b * 114) / 1000 > 150;
+}
 
 // ─── Canvas setup ────────────────────────────────────────────────────
 const canvas = document.getElementById('arena');
@@ -178,6 +300,7 @@ function groupSize(s) {
 
 // ─── AI & movement ──────────────────────────────────────────────────
 function updateAI(dt) {
+  const curAttackRange = shapeMode === 'circles' ? circleRadius * 2 + 2 : ATTACK_RANGE;
   for (const s of stickmen) {
     // Find nearest enemy
     let nearestEnemy = null, nearDist = Infinity;
@@ -207,7 +330,7 @@ function updateAI(dt) {
     }
 
     // Move toward nearest enemy
-    if (nearDist > ATTACK_RANGE) {
+    if (nearDist > curAttackRange) {
       s.state = 'moving';
       const dx = nearestEnemy.x - s.x, dy = nearestEnemy.y - s.y;
       const d  = Math.sqrt(dx * dx + dy * dy) || 1;
@@ -231,7 +354,7 @@ function updateAI(dt) {
       const dx = a.x - b.x, dy = a.y - b.y;
       const d  = Math.sqrt(dx * dx + dy * dy) || 0.1;
       if (d < SEPARATION) {
-        const push = (SEPARATION - d) * 0.3;
+        const push = (SEPARATION - d) * (shapeMode === 'liquid' ? 0.08 : 0.3);
         const nx = dx / d, ny = dy / d;
         a.vx += nx * push; a.vy += ny * push;
         b.vx -= nx * push; b.vy -= ny * push;
@@ -356,6 +479,114 @@ function drawStickman(s, alpha) {
   ctx.restore();
 }
 
+// ─── Circle mode rendering ───────────────────────────────────────────
+function drawCircleEntity(s, alpha) {
+  const c = COLOURS[s.colour];
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.fillStyle = c.fill;
+  ctx.beginPath();
+  ctx.arc(s.x, s.y, circleRadius, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+}
+
+function resolveCircleCollisions() {
+  const minDist = circleRadius * 2;
+  for (let pass = 0; pass < 3; pass++) {
+    for (let i = 0; i < stickmen.length; i++) {
+      for (let j = i + 1; j < stickmen.length; j++) {
+        const a = stickmen[i], b = stickmen[j];
+        const dx = a.x - b.x, dy = a.y - b.y;
+        const d = Math.sqrt(dx * dx + dy * dy) || 0.01;
+        if (d < minDist) {
+          const overlap = (minDist - d) * 0.5;
+          const nx = dx / d, ny = dy / d;
+          a.x += nx * overlap; a.y += ny * overlap;
+          b.x -= nx * overlap; b.y -= ny * overlap;
+        }
+      }
+    }
+  }
+}
+
+// ─── Liquid mode (metaball rendering) ────────────────────────────────
+const liquidCanvases = {};
+const liquidCtxs     = {};
+const LIQUID_SCALE     = 0.5;
+const BLOB_RADIUS      = 30;
+const LIQUID_THRESHOLD = 120;
+
+function ensureLiquidCanvases() {
+  const w = Math.ceil(canvas.width  * LIQUID_SCALE);
+  const h = Math.ceil(canvas.height * LIQUID_SCALE);
+  for (const col of Object.keys(COLOURS)) {
+    if (!liquidCanvases[col]) {
+      liquidCanvases[col] = document.createElement('canvas');
+      liquidCtxs[col]     = liquidCanvases[col].getContext('2d', { willReadFrequently: true });
+    }
+    const lc = liquidCanvases[col];
+    if (lc.width !== w || lc.height !== h) { lc.width = w; lc.height = h; }
+  }
+}
+
+function renderLiquid() {
+  ensureLiquidCanvases();
+  const firstCol = Object.keys(COLOURS)[0];
+  const w = liquidCanvases[firstCol].width;
+  const h = liquidCanvases[firstCol].height;
+  const blobR = BLOB_RADIUS * LIQUID_SCALE;
+
+  const byColour = {};
+  for (const col of Object.keys(COLOURS)) byColour[col] = [];
+  for (const s of stickmen) byColour[s.colour].push(s);
+  for (const s of corpses)  byColour[s.colour].push(s);
+
+  for (const col of Object.keys(COLOURS)) {
+    const entities = byColour[col];
+    const lctx = liquidCtxs[col];
+    lctx.clearRect(0, 0, w, h);
+    if (entities.length === 0) continue;
+
+    // Draw soft radial gradient blobs with additive blending
+    lctx.globalCompositeOperation = 'lighter';
+    for (const s of entities) {
+      const sx = s.x * LIQUID_SCALE;
+      const sy = s.y * LIQUID_SCALE;
+      const a  = s.fadeT !== undefined ? (s.fadeT / DEATH_FADE_DUR) * 0.6 : 1;
+      const grad = lctx.createRadialGradient(sx, sy, 0, sx, sy, blobR);
+      grad.addColorStop(0,   `rgba(255,255,255,${a})`);
+      grad.addColorStop(0.4, `rgba(255,255,255,${a * 0.7})`);
+      grad.addColorStop(1,   'rgba(255,255,255,0)');
+      lctx.fillStyle = grad;
+      lctx.beginPath();
+      lctx.arc(sx, sy, blobR, 0, Math.PI * 2);
+      lctx.fill();
+    }
+    lctx.globalCompositeOperation = 'source-over';
+
+    // Threshold pass — convert field strength to team colour
+    const imgData = lctx.getImageData(0, 0, w, h);
+    const px = imgData.data;
+    const rgb = hexToRgb(COLOURS[col].fill);
+    for (let i = 0; i < px.length; i += 4) {
+      const strength = px[i]; // R channel (white blobs so R=G=B)
+      if (strength > LIQUID_THRESHOLD) {
+        const t = (strength - LIQUID_THRESHOLD) / (255 - LIQUID_THRESHOLD);
+        const glow = 1 + (1 - t) * 0.25;
+        px[i]     = Math.min(255, (rgb.r * glow) | 0);
+        px[i + 1] = Math.min(255, (rgb.g * glow) | 0);
+        px[i + 2] = Math.min(255, (rgb.b * glow) | 0);
+        px[i + 3] = (200 + 55 * t) | 0;
+      } else {
+        px[i] = px[i + 1] = px[i + 2] = px[i + 3] = 0;
+      }
+    }
+    lctx.putImageData(imgData, 0, 0);
+    ctx.drawImage(liquidCanvases[col], 0, 0, w, h, 0, 0, canvas.width, canvas.height);
+  }
+}
+
 function render() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -371,14 +602,12 @@ function render() {
     }
   }
 
-  // Draw corpses (fading)
-  for (const c of corpses) {
-    drawStickman(c, c.fadeT / DEATH_FADE_DUR * 0.6);
-  }
-
-  // Draw alive stickmen
-  for (const s of stickmen) {
-    drawStickman(s, 1);
+  if (shapeMode === 'liquid') {
+    renderLiquid();
+  } else {
+    const drawFn = shapeMode === 'circles' ? drawCircleEntity : drawStickman;
+    for (const c of corpses) drawFn(c, c.fadeT / DEATH_FADE_DUR * 0.6);
+    for (const s of stickmen) drawFn(s, 1);
   }
 
   // Update counters
@@ -400,6 +629,7 @@ function gameLoop(now) {
   if (!paused) {
     rebuildGroups();
     updateAI(dt);
+    if (shapeMode === 'circles') resolveCircleCollisions();
     updateCombat(dt);
   }
   render();
@@ -439,6 +669,53 @@ document.getElementById('spawn-all-btn').addEventListener('click', () => {
 document.getElementById('clear-btn').addEventListener('click', () => {
   stickmen.length = 0;
   corpses.length  = 0;
+});
+
+// ─── Settings panel ──────────────────────────────────────────────────
+const settingsBtn     = document.getElementById('settings-btn');
+const settingsPanel   = document.getElementById('settings-panel');
+const settingsOverlay = document.getElementById('settings-overlay');
+const settingsClose   = document.getElementById('settings-close');
+
+function openSettings()  { settingsPanel.classList.add('open');    settingsOverlay.classList.add('open'); }
+function closeSettings() { settingsPanel.classList.remove('open'); settingsOverlay.classList.remove('open'); }
+
+settingsBtn.addEventListener('click', openSettings);
+settingsClose.addEventListener('click', closeSettings);
+settingsOverlay.addEventListener('click', closeSettings);
+
+// Colour pickers
+for (const col of ['red', 'blue', 'green', 'yellow']) {
+  document.getElementById('colour-' + col).addEventListener('input', (e) => {
+    const hex = e.target.value;
+    COLOURS[col].fill   = hex;
+    COLOURS[col].stroke = darkenHex(hex, 0.15);
+    const btn = document.querySelector(`.spawn-btn[data-colour="${col}"]`);
+    if (btn) {
+      btn.style.background = hex;
+      btn.style.boxShadow  = `0 0 10px ${hex}88`;
+      btn.style.color = isLightColour(hex) ? '#333' : '#fff';
+    }
+  });
+}
+
+// Shape mode selector
+const shapeModeSelect  = document.getElementById('shape-mode');
+const circleSettingsEl = document.getElementById('circle-settings');
+const liquidSettingsEl = document.getElementById('liquid-settings');
+
+shapeModeSelect.addEventListener('change', (e) => {
+  shapeMode = e.target.value;
+  circleSettingsEl.style.display = shapeMode === 'circles' ? 'block' : 'none';
+  liquidSettingsEl.style.display = shapeMode === 'liquid'  ? 'block' : 'none';
+});
+
+// Circle size slider
+const circleSizeSlider = document.getElementById('circle-size');
+const circleSizeVal    = document.getElementById('circle-size-val');
+circleSizeSlider.addEventListener('input', (e) => {
+  circleRadius = parseInt(e.target.value, 10);
+  circleSizeVal.textContent = circleRadius;
 });
 </script>
 </body>
