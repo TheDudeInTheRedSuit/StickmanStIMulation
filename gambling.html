@@ -23,7 +23,6 @@
             display: block;
         }
 
-        /* ─── Overlays ─────────────────────────────────────────────── */
         .overlay {
             position: fixed;
             inset: 0;
@@ -76,7 +75,6 @@
             margin-bottom: 20px;
         }
 
-        /* ─── Form Elements ───────────────────────────────────────── */
         .input-row {
             display: flex;
             gap: 8px;
@@ -99,6 +97,25 @@
             outline: none;
             border-color: #f1c40f;
             background: rgba(255, 255, 255, 0.1);
+        }
+
+        textarea.rtc-blob {
+            width: 100%;
+            min-height: 80px;
+            padding: 10px;
+            border: 1px solid #444;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.06);
+            color: #fff;
+            font-size: 11px;
+            font-family: 'Courier New', monospace;
+            resize: vertical;
+            word-break: break-all;
+        }
+
+        textarea.rtc-blob:focus {
+            outline: none;
+            border-color: #f1c40f;
         }
 
         .btn {
@@ -151,28 +168,69 @@
             font-size: 13px;
         }
 
-        /* ─── Party Code ──────────────────────────────────────────── */
-        .party-code-box {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 12px;
-            background: rgba(241, 196, 15, 0.08);
-            border: 1px dashed #f1c40f;
-            border-radius: 10px;
+        .step {
             padding: 14px;
-            margin: 12px 0;
+            margin: 10px 0;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid #2a2a3e;
+            border-radius: 10px;
         }
 
-        .party-code {
-            font-family: 'Courier New', monospace;
-            font-size: 28px;
+        .step-num {
+            display: inline-block;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: #f1c40f;
+            color: #1a1a2e;
+            text-align: center;
+            line-height: 24px;
             font-weight: 900;
-            letter-spacing: 6px;
-            color: #f1c40f;
+            font-size: 13px;
+            margin-right: 8px;
         }
 
-        /* ─── Player List ─────────────────────────────────────────── */
+        .step-label {
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .step p {
+            color: #888;
+            font-size: 13px;
+            margin-top: 6px;
+        }
+
+        .step.done {
+            border-color: #2ecc71;
+            background: rgba(46, 204, 113, 0.06);
+        }
+
+        .step.done .step-num {
+            background: #2ecc71;
+        }
+
+        .status-dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 6px;
+        }
+
+        .status-dot.connected {
+            background: #2ecc71;
+        }
+
+        .status-dot.waiting {
+            background: #f1c40f;
+            animation: pulse-live 1.5s ease-in-out infinite;
+        }
+
+        .status-dot.disconnected {
+            background: #e74c3c;
+        }
+
         .player-list {
             list-style: none;
             margin: 10px 0;
@@ -209,18 +267,6 @@
             margin-left: 8px;
         }
 
-        .player-list li .p-remove {
-            cursor: pointer;
-            color: #e74c3c;
-            font-size: 18px;
-            padding: 0 4px;
-        }
-
-        .player-list li .p-remove:hover {
-            color: #ff6b6b;
-        }
-
-        /* ─── Betting Phase ───────────────────────────────────────── */
         .bet-section {
             margin-bottom: 16px;
             padding: 14px;
@@ -259,7 +305,6 @@
             border: 2px solid transparent;
             cursor: pointer;
             transition: border-color .15s, transform .1s;
-            position: relative;
         }
 
         .team-bet-card:hover {
@@ -310,7 +355,6 @@
             padding: 6px 10px;
         }
 
-        /* ─── Battle HUD ──────────────────────────────────────────── */
         #battle-hud {
             position: fixed;
             top: 0;
@@ -396,7 +440,6 @@
             background: rgba(255, 255, 255, 0.1);
         }
 
-        /* ─── Results Overlay ─────────────────────────────────────── */
         .results-panel {
             text-align: center;
             max-width: 550px;
@@ -449,7 +492,6 @@
             color: #888;
         }
 
-        /* ─── Scoreboard ──────────────────────────────────────────── */
         .scoreboard {
             width: 100%;
             margin: 16px 0;
@@ -472,10 +514,6 @@
             font-size: 16px;
         }
 
-        .scoreboard-row .rank:nth-child(1) {
-            color: #f1c40f;
-        }
-
         .scoreboard-row .s-name {
             flex: 1;
             font-weight: 600;
@@ -487,7 +525,6 @@
             font-size: 16px;
         }
 
-        /* ─── Commentary ──────────────────────────────────────────── */
         #commentary {
             position: fixed;
             bottom: 16px;
@@ -511,7 +548,6 @@
             opacity: 0;
         }
 
-        /* ─── Confetti ─────────────────────────────────────────────── */
         .confetti-piece {
             position: fixed;
             width: 8px;
@@ -533,7 +569,6 @@
             }
         }
 
-        /* ─── Tabs ─────────────────────────────────────────────────── */
         .tab-bar {
             display: flex;
             gap: 4px;
@@ -563,49 +598,6 @@
             background: rgba(255, 255, 255, 0.05);
         }
 
-        /* ─── Army Size Config ─────────────────────────────────────── */
-        .army-config {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 8px;
-            margin: 10px 0;
-        }
-
-        .army-config label {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 8px;
-            background: rgba(255, 255, 255, 0.04);
-            border-radius: 6px;
-            font-size: 14px;
-        }
-
-        .army-config label .dot {
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            flex-shrink: 0;
-        }
-
-        .army-config input {
-            width: 50px;
-            padding: 4px 6px;
-            border: 1px solid #444;
-            border-radius: 4px;
-            background: rgba(255, 255, 255, 0.08);
-            color: #fff;
-            font-size: 13px;
-            text-align: center;
-            margin-left: auto;
-        }
-
-        .army-config input:focus {
-            outline: none;
-            border-color: #f1c40f;
-        }
-
-        /* ─── Misc ─────────────────────────────────────────────────── */
         .text-center {
             text-align: center;
         }
@@ -616,10 +608,6 @@
 
         .mt-16 {
             margin-top: 16px;
-        }
-
-        .mb-6 {
-            margin-bottom: 6px;
         }
 
         .gap-8 {
@@ -670,36 +658,34 @@
                 opacity: 0;
             }
         }
+
+        .peer-count {
+            font-size: 13px;
+            color: #2ecc71;
+            font-weight: 600;
+        }
     </style>
 </head>
 
 <body>
 
-    <!-- ─── LOBBY OVERLAY ────────────────────────────────────────── -->
+    <!-- LOBBY -->
     <div id="lobby-overlay" class="overlay">
         <div class="panel">
-            <h1>STICKMAN BATTLE BETS</h1>
+            <h1 id="lobby-title">STICKMAN BATTLE BETS</h1>
             <p class="subtitle">Place your bets. Watch them fight. Winner takes all.</p>
 
             <div class="tab-bar">
-                <button class="tab-btn active" data-tab="create">Create Party</button>
-                <button class="tab-btn" data-tab="join">Join Party</button>
+                <button class="tab-btn active" data-tab="host">Host Game</button>
+                <button class="tab-btn" data-tab="join">Join Game</button>
             </div>
 
-            <!-- Create Party Tab -->
-            <div id="tab-create">
-                <div class="party-code-box">
-                    <span style="color:#aaa; font-size:13px;">PARTY CODE</span>
-                    <span class="party-code" id="my-party-code">----</span>
-                    <button class="btn btn-outline btn-sm" id="copy-code-btn">Copy</button>
-                </div>
-
-                <h2>Players</h2>
+            <!-- HOST TAB -->
+            <div id="tab-host">
+                <h2>Your Name</h2>
                 <div class="input-row">
-                    <input type="text" id="player-name-input" placeholder="Enter player name" maxlength="20">
-                    <button class="btn btn-gold btn-sm" id="add-player-btn">+ Add</button>
+                    <input type="text" id="host-name-input" placeholder="Enter your name" maxlength="20">
                 </div>
-                <ul class="player-list" id="player-list"></ul>
 
                 <h2>Starting Balance</h2>
                 <div class="input-row">
@@ -707,65 +693,106 @@
                     <input type="number" id="starting-balance" value="1000" min="100" max="100000" step="100">
                 </div>
 
-                <h2>Army Size (per team)</h2>
-                <div class="army-config">
-                    <label><span class="dot" style="background:#e74c3c;"></span> Red <input type="number" id="army-red"
-                            value="15" min="1" max="100"></label>
-                    <label><span class="dot" style="background:#3498db;"></span> Blue <input type="number"
-                            id="army-blue" value="15" min="1" max="100"></label>
-                    <label><span class="dot" style="background:#2ecc71;"></span> Green <input type="number"
-                            id="army-green" value="15" min="1" max="100"></label>
-                    <label><span class="dot" style="background:#f1c40f;"></span> Yellow <input type="number"
-                            id="army-yellow" value="15" min="1" max="100"></label>
+                <div class="step" id="host-step-1">
+                    <span class="step-num">1</span>
+                    <span class="step-label">Create a room</span>
+                    <p>Click below to generate your invite code.</p>
+                    <div class="mt-12">
+                        <button class="btn btn-gold" id="host-create-btn">Create Room</button>
+                    </div>
                 </div>
 
-                <div class="text-center mt-16">
-                    <button class="btn btn-gold w-full" id="start-betting-btn" style="padding:14px; font-size:16px;">
-                        Start Betting Round
-                    </button>
+                <div class="step" id="host-step-2" style="display:none;">
+                    <span class="step-num">2</span>
+                    <span class="step-label">Send this invite code to your friends</span>
+                    <p>They paste it in the "Join Game" tab on their device.</p>
+                    <textarea class="rtc-blob mt-12" id="host-offer-text" readonly></textarea>
+                    <div class="mt-12 flex-center gap-8">
+                        <button class="btn btn-gold btn-sm" id="host-copy-offer">Copy Invite Code</button>
+                    </div>
+                </div>
+
+                <div class="step" id="host-step-3" style="display:none;">
+                    <span class="step-num">3</span>
+                    <span class="step-label">Paste your friend's response code</span>
+                    <p>They'll give you a code back after pasting your invite.</p>
+                    <textarea class="rtc-blob mt-12" id="host-answer-text"
+                        placeholder="Paste friend's response code here..."></textarea>
+                    <div class="mt-12 flex-center gap-8">
+                        <button class="btn btn-green btn-sm" id="host-accept-btn">Connect</button>
+                        <button class="btn btn-outline btn-sm" id="host-add-peer-btn" style="display:none;">+ Invite
+                            Another Friend</button>
+                    </div>
+                </div>
+
+                <div id="host-connected-area" style="display:none;">
+                    <h2>Players <span class="peer-count" id="peer-count">(1 player)</span></h2>
+                    <ul class="player-list" id="player-list"></ul>
+                    <div class="text-center mt-16">
+                        <button class="btn btn-gold w-full" id="start-betting-btn"
+                            style="padding:14px; font-size:16px;">Start Betting Round</button>
+                    </div>
                 </div>
             </div>
 
-            <!-- Join Party Tab -->
+            <!-- JOIN TAB -->
             <div id="tab-join" style="display:none;">
-                <h2>Enter Party Code</h2>
+                <h2>Your Name</h2>
                 <div class="input-row">
-                    <input type="text" id="join-code-input" placeholder="e.g. ABCD" maxlength="4"
-                        style="text-transform:uppercase; text-align:center; font-size:24px; letter-spacing:6px; font-weight:900;">
-                    <button class="btn btn-gold" id="join-party-btn">Join</button>
+                    <input type="text" id="join-name-input" placeholder="Enter your name" maxlength="20">
                 </div>
-                <p style="color:#888; font-size:13px; margin-top:8px; text-align:center;">
-                    Ask the host for the 4-letter party code. Everyone needs to be on the same network/browser.
-                </p>
+
+                <div class="step" id="join-step-1">
+                    <span class="step-num">1</span>
+                    <span class="step-label">Paste the host's invite code</span>
+                    <p>Get the invite code from whoever created the room.</p>
+                    <textarea class="rtc-blob mt-12" id="join-offer-text"
+                        placeholder="Paste invite code here..."></textarea>
+                    <div class="mt-12 flex-center gap-8">
+                        <button class="btn btn-gold btn-sm" id="join-accept-offer-btn">Accept Invite</button>
+                    </div>
+                </div>
+
+                <div class="step" id="join-step-2" style="display:none;">
+                    <span class="step-num">2</span>
+                    <span class="step-label">Send this response code back to the host</span>
+                    <p>Copy this and send it to the person who invited you.</p>
+                    <textarea class="rtc-blob mt-12" id="join-answer-text" readonly></textarea>
+                    <div class="mt-12 flex-center gap-8">
+                        <button class="btn btn-gold btn-sm" id="join-copy-answer">Copy Response Code</button>
+                    </div>
+                </div>
+
+                <div class="step" id="join-step-3" style="display:none;">
+                    <span class="step-num" style="background:#2ecc71;">&#10003;</span>
+                    <span class="step-label">Connected!</span>
+                    <p><span class="status-dot connected"></span>Waiting for the host to start the betting round...</p>
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- ─── BETTING OVERLAY ──────────────────────────────────────── -->
+    <!-- BETTING -->
     <div id="betting-overlay" class="overlay hidden">
         <div class="panel" style="max-width:700px;">
             <h1>PLACE YOUR BETS</h1>
-            <p class="subtitle">Round <span id="round-number">1</span> — Choose your team and wager</p>
-
-            <div id="army-preview" style="text-align:center; margin-bottom:12px; color:#888; font-size:13px;"></div>
-
+            <p class="subtitle">Round <span id="round-number">1</span> — Pick your team and wager</p>
+            <p style="text-align:center; margin-bottom:12px; color:#888; font-size:13px;">&#9876;&#65039; 200 fighters
+                per team &mdash; equal armies, pure luck!</p>
             <div id="bet-sections"></div>
-
             <div class="text-center mt-16">
-                <button class="btn btn-green w-full" id="lock-bets-btn" style="padding:14px; font-size:16px;">
-                    Lock Bets &amp; Fight!
-                </button>
+                <button class="btn btn-green w-full" id="lock-bets-btn" style="padding:14px; font-size:16px;">Lock Bets
+                    &amp; Fight!</button>
             </div>
         </div>
     </div>
 
-    <!-- ─── RESULTS OVERLAY ──────────────────────────────────────── -->
+    <!-- RESULTS -->
     <div id="results-overlay" class="overlay hidden">
         <div class="panel results-panel">
             <p style="font-size:14px; color:#888;">Round <span id="result-round">1</span> Results</p>
-            <div class="winner-banner" id="winner-banner">🏆 RED WINS!</div>
+            <div class="winner-banner" id="winner-banner">&#127942; RED WINS!</div>
             <p class="winner-sub" id="winner-sub"></p>
-
             <table class="payout-table">
                 <thead>
                     <tr>
@@ -777,10 +804,8 @@
                 </thead>
                 <tbody id="payout-body"></tbody>
             </table>
-
             <h2 style="text-align:center;">Leaderboard</h2>
             <div id="scoreboard"></div>
-
             <div class="flex-center gap-8 mt-16">
                 <button class="btn btn-gold" id="next-round-btn" style="padding:12px 32px; font-size:15px;">Next
                     Round</button>
@@ -789,7 +814,7 @@
         </div>
     </div>
 
-    <!-- ─── BATTLE HUD ──────────────────────────────────────────── -->
+    <!-- BATTLE HUD -->
     <div id="battle-hud" class="hidden">
         <span class="live-badge">LIVE</span>
         <div class="team-counter"><span class="team-dot" style="background:#e74c3c;"></span><span class="team-count"
@@ -801,15 +826,16 @@
         <div class="team-counter"><span class="team-dot" style="background:#f1c40f;"></span><span class="team-count"
                 id="hud-yellow">0</span></div>
         <span id="battle-timer">0:00</span>
-        <button id="skip-btn">⏩ Skip</button>
+        <button id="skip-btn">&#9193; Skip</button>
     </div>
 
     <div id="commentary" class="hidden"></div>
-
     <canvas id="arena"></canvas>
 
     <script>
-        // ─── GAME CONSTANTS ──────────────────────────────────────────
+        // ═══════════════════════════════════════════════════════════════
+        // BATTLE ENGINE
+        // ═══════════════════════════════════════════════════════════════
         const COLOURS = {
             red: { fill: '#e74c3c', stroke: '#c0392b' },
             blue: { fill: '#3498db', stroke: '#2980b9' },
@@ -817,54 +843,33 @@
             yellow: { fill: '#f1c40f', stroke: '#d4ac0f' },
         };
         const TEAM_NAMES = ['red', 'blue', 'green', 'yellow'];
-        const SPEED = 1.6;
-        const FLEE_SPEED = 2.2;
-        const CONTACT_RANGE = 22;
-        const ATTACK_RANGE = 20;
-        const ATTACK_CD = 0.5;
-        const DAMAGE = 12;
-        const MAX_HP = 100;
-        const SEPARATION = 14;
-        const HEAD_R = 6;
-        const BODY_H = 18;
-        const LEG_H = 14;
-        const ARM_LEN = 12;
-        const HP_BAR_W = 20;
-        const HP_BAR_H = 3;
-        const UI_TOP_MARGIN = 52;
-        const DEATH_FADE_DUR = 0.35;
+        const ARMY_SIZE = 200;
+        const SPEED = 1.6, FLEE_SPEED = 2.2, CONTACT_RANGE = 22, ATTACK_RANGE = 20;
+        const ATTACK_CD = 0.5, DAMAGE = 12, MAX_HP = 100, SEPARATION = 14;
+        const HEAD_R = 6, BODY_H = 18, LEG_H = 14, ARM_LEN = 12;
+        const HP_BAR_W = 20, HP_BAR_H = 3, UI_TOP_MARGIN = 52, DEATH_FADE_DUR = 0.35;
 
-        // ─── CANVAS SETUP ────────────────────────────────────────────
         const canvas = document.getElementById('arena');
         const ctx = canvas.getContext('2d');
         function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
         window.addEventListener('resize', resize);
         resize();
 
-        // ─── ENTITY MODEL ────────────────────────────────────────────
         let nextId = 0;
         const stickmen = [];
         const corpses = [];
 
-        function createStickman(colour) {
+        function createStickman(colour, rng) {
             const margin = 40;
             return {
                 id: nextId++,
-                x: margin + Math.random() * (canvas.width - margin * 2),
-                y: UI_TOP_MARGIN + margin + Math.random() * (canvas.height - UI_TOP_MARGIN - margin * 2),
-                vx: 0, vy: 0,
-                colour,
-                hp: MAX_HP, maxHp: MAX_HP,
-                groupId: null,
-                state: 'idle',
-                facing: 1,
-                target: null,
-                attackCD: 0,
-                punchT: 0,
+                x: margin + rng() * (canvas.width - margin * 2),
+                y: UI_TOP_MARGIN + margin + rng() * (canvas.height - UI_TOP_MARGIN - margin * 2),
+                vx: 0, vy: 0, colour, hp: MAX_HP, maxHp: MAX_HP, groupId: null,
+                state: 'idle', facing: 1, target: null, attackCD: 0, punchT: 0,
             };
         }
 
-        // ─── GROUP TRACKING ──────────────────────────────────────────
         let groups = {};
         function rebuildGroups() {
             const parent = {};
@@ -880,45 +885,31 @@
                 }
             }
             groups = {};
-            for (const s of stickmen) {
-                const root = find(s.id);
-                s.groupId = root;
-                if (!groups[root]) groups[root] = new Set();
-                groups[root].add(s.id);
-            }
+            for (const s of stickmen) { const root = find(s.id); s.groupId = root; if (!groups[root]) groups[root] = new Set(); groups[root].add(s.id); }
         }
         function groupSize(s) { return groups[s.groupId] ? groups[s.groupId].size : 1; }
 
-        // ─── AI & MOVEMENT ───────────────────────────────────────────
         function updateAI(dt) {
             for (const s of stickmen) {
                 let nearestEnemy = null, nearDist = Infinity;
                 for (const o of stickmen) {
                     if (o.colour === s.colour) continue;
-                    const dx = o.x - s.x, dy = o.y - s.y;
-                    const d = Math.sqrt(dx * dx + dy * dy);
+                    const dx = o.x - s.x, dy = o.y - s.y, d = Math.sqrt(dx * dx + dy * dy);
                     if (d < nearDist) { nearDist = d; nearestEnemy = o; }
                 }
                 if (!nearestEnemy) { s.state = 'idle'; s.vx = 0; s.vy = 0; continue; }
-                const mySize = groupSize(s);
-                const enemySize = groupSize(nearestEnemy);
+                const mySize = groupSize(s), enemySize = groupSize(nearestEnemy);
                 if (enemySize > mySize * 2) {
                     s.state = 'fleeing';
-                    const dx = s.x - nearestEnemy.x, dy = s.y - nearestEnemy.y;
-                    const d = Math.sqrt(dx * dx + dy * dy) || 1;
-                    s.vx = (dx / d) * FLEE_SPEED; s.vy = (dy / d) * FLEE_SPEED;
-                    s.facing = s.vx >= 0 ? 1 : -1;
-                    continue;
+                    const dx = s.x - nearestEnemy.x, dy = s.y - nearestEnemy.y, d = Math.sqrt(dx * dx + dy * dy) || 1;
+                    s.vx = (dx / d) * FLEE_SPEED; s.vy = (dy / d) * FLEE_SPEED; s.facing = s.vx >= 0 ? 1 : -1; continue;
                 }
                 if (nearDist > ATTACK_RANGE) {
                     s.state = 'moving';
-                    const dx = nearestEnemy.x - s.x, dy = nearestEnemy.y - s.y;
-                    const d = Math.sqrt(dx * dx + dy * dy) || 1;
-                    s.vx = (dx / d) * SPEED; s.vy = (dy / d) * SPEED;
-                    s.facing = s.vx >= 0 ? 1 : -1;
+                    const dx = nearestEnemy.x - s.x, dy = nearestEnemy.y - s.y, d = Math.sqrt(dx * dx + dy * dy) || 1;
+                    s.vx = (dx / d) * SPEED; s.vy = (dy / d) * SPEED; s.facing = s.vx >= 0 ? 1 : -1;
                 } else {
-                    s.state = 'attacking'; s.target = nearestEnemy;
-                    s.vx = 0; s.vy = 0;
+                    s.state = 'attacking'; s.target = nearestEnemy; s.vx = 0; s.vy = 0;
                     s.facing = nearestEnemy.x >= s.x ? 1 : -1;
                 }
             }
@@ -926,14 +917,8 @@
                 for (let j = i + 1; j < stickmen.length; j++) {
                     const a = stickmen[i], b = stickmen[j];
                     if (a.colour !== b.colour) continue;
-                    const dx = a.x - b.x, dy = a.y - b.y;
-                    const d = Math.sqrt(dx * dx + dy * dy) || 0.1;
-                    if (d < SEPARATION) {
-                        const push = (SEPARATION - d) * 0.3;
-                        const nx = dx / d, ny = dy / d;
-                        a.vx += nx * push; a.vy += ny * push;
-                        b.vx -= nx * push; b.vy -= ny * push;
-                    }
+                    const dx = a.x - b.x, dy = a.y - b.y, d = Math.sqrt(dx * dx + dy * dy) || 0.1;
+                    if (d < SEPARATION) { const push = (SEPARATION - d) * 0.3, nx = dx / d, ny = dy / d; a.vx += nx * push; a.vy += ny * push; b.vx -= nx * push; b.vy -= ny * push; }
                 }
             }
             for (const s of stickmen) {
@@ -943,39 +928,20 @@
             }
         }
 
-        // ─── COMBAT ──────────────────────────────────────────────────
         function updateCombat(dt) {
             for (const s of stickmen) {
-                s.attackCD = Math.max(0, s.attackCD - dt);
-                s.punchT = Math.max(0, s.punchT - dt);
-                if (s.state === 'attacking' && s.target && s.attackCD <= 0) {
-                    const t = s.target;
-                    if (t.hp > 0) { t.hp -= DAMAGE; s.attackCD = ATTACK_CD; s.punchT = 0.15; }
-                }
+                s.attackCD = Math.max(0, s.attackCD - dt); s.punchT = Math.max(0, s.punchT - dt);
+                if (s.state === 'attacking' && s.target && s.attackCD <= 0 && s.target.hp > 0) { s.target.hp -= DAMAGE; s.attackCD = ATTACK_CD; s.punchT = 0.15; }
             }
-            for (let i = stickmen.length - 1; i >= 0; i--) {
-                if (stickmen[i].hp <= 0) {
-                    const dead = stickmen.splice(i, 1)[0];
-                    dead.fadeT = DEATH_FADE_DUR;
-                    corpses.push(dead);
-                }
-            }
-            for (let i = corpses.length - 1; i >= 0; i--) {
-                corpses[i].fadeT -= dt;
-                if (corpses[i].fadeT <= 0) corpses.splice(i, 1);
-            }
+            for (let i = stickmen.length - 1; i >= 0; i--) { if (stickmen[i].hp <= 0) { const dead = stickmen.splice(i, 1)[0]; dead.fadeT = DEATH_FADE_DUR; corpses.push(dead); } }
+            for (let i = corpses.length - 1; i >= 0; i--) { corpses[i].fadeT -= dt; if (corpses[i].fadeT <= 0) corpses.splice(i, 1); }
         }
 
-        // ─── RENDERING ───────────────────────────────────────────────
         function drawStickman(s, alpha) {
             const { x, y, colour, facing, punchT, hp, maxHp } = s;
             const c = COLOURS[colour];
-            ctx.save();
-            ctx.globalAlpha = alpha;
-            ctx.lineCap = 'round'; ctx.lineJoin = 'round';
-            const headY = y - BODY_H - HEAD_R;
-            const bodyBot = y;
-            const t = performance.now() / 200;
+            ctx.save(); ctx.globalAlpha = alpha; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+            const headY = y - BODY_H - HEAD_R, bodyBot = y, t = performance.now() / 200;
             const legSway = (s.state === 'moving' || s.state === 'fleeing') ? Math.sin(t + s.id) * 5 : 0;
             ctx.strokeStyle = c.stroke; ctx.lineWidth = 2.5;
             ctx.beginPath(); ctx.moveTo(x, bodyBot); ctx.lineTo(x - 5 + legSway, bodyBot + LEG_H); ctx.stroke();
@@ -991,15 +957,12 @@
                 ctx.beginPath(); ctx.moveTo(x, shoulderY); ctx.lineTo(x - ARM_LEN * 0.6, shoulderY + 8 + armSway); ctx.stroke();
                 ctx.beginPath(); ctx.moveTo(x, shoulderY); ctx.lineTo(x + ARM_LEN * 0.6, shoulderY + 8 - armSway); ctx.stroke();
             }
-            ctx.fillStyle = c.fill;
-            ctx.beginPath(); ctx.arc(x, headY, HEAD_R, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = c.fill; ctx.beginPath(); ctx.arc(x, headY, HEAD_R, 0, Math.PI * 2); ctx.fill();
             ctx.strokeStyle = c.stroke; ctx.lineWidth = 1.5; ctx.stroke();
             if (hp < maxHp) {
-                const hpRatio = Math.max(0, hp / maxHp);
-                const barX = x - HP_BAR_W / 2; const barY = headY - HEAD_R - 7;
+                const hpRatio = Math.max(0, hp / maxHp), barX = x - HP_BAR_W / 2, barY = headY - HEAD_R - 7;
                 ctx.fillStyle = '#444'; ctx.fillRect(barX, barY, HP_BAR_W, HP_BAR_H);
-                const r = Math.round(255 * (1 - hpRatio)), g = Math.round(255 * hpRatio);
-                ctx.fillStyle = `rgb(${r},${g},50)`;
+                ctx.fillStyle = `rgb(${Math.round(255 * (1 - hpRatio))},${Math.round(255 * hpRatio)},50)`;
                 ctx.fillRect(barX, barY, HP_BAR_W * hpRatio, HP_BAR_H);
             }
             ctx.restore();
@@ -1009,661 +972,531 @@
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             ctx.fillStyle = '#16213e'; ctx.fillRect(0, 0, canvas.width, canvas.height);
             ctx.fillStyle = 'rgba(255,255,255,0.03)';
-            for (let gx = 0; gx < canvas.width; gx += 40) {
-                for (let gy = UI_TOP_MARGIN; gy < canvas.height; gy += 40) {
-                    ctx.fillRect(gx, gy, 2, 2);
-                }
-            }
+            for (let gx = 0; gx < canvas.width; gx += 40) for (let gy = UI_TOP_MARGIN; gy < canvas.height; gy += 40) ctx.fillRect(gx, gy, 2, 2);
             for (const c of corpses) drawStickman(c, c.fadeT / DEATH_FADE_DUR * 0.6);
             for (const s of stickmen) drawStickman(s, 1);
         }
 
-        // ─── GAME LOOP ───────────────────────────────────────────────
         let lastTime = performance.now();
-        let battleRunning = false;
-        let battleTimeElapsed = 0;
-
+        let battleRunning = false, battleTimeElapsed = 0;
         function gameLoop(now) {
-            const dt = Math.min((now - lastTime) / 1000, 0.05);
-            lastTime = now;
-            if (battleRunning) {
-                battleTimeElapsed += dt;
-                rebuildGroups();
-                updateAI(dt);
-                updateCombat(dt);
-                updateBattleHUD();
-                checkBattleEnd();
-            }
+            const dt = Math.min((now - lastTime) / 1000, 0.05); lastTime = now;
+            if (battleRunning) { battleTimeElapsed += dt; rebuildGroups(); updateAI(dt); updateCombat(dt); updateBattleHUD(); checkBattleEnd(); }
             render();
             requestAnimationFrame(gameLoop);
         }
         requestAnimationFrame(gameLoop);
 
         // ═══════════════════════════════════════════════════════════════
-        // ─── MULTIPLAYER GAMBLING SYSTEM ─────────────────────────────
+        // MULTIPLAYER (WebRTC)
         // ═══════════════════════════════════════════════════════════════
+        const RTC_CONFIG = {
+            iceServers: [
+                { urls: 'stun:stun.l.google.com:19302' },
+                { urls: 'stun:stun1.l.google.com:19302' },
+            ]
+        };
 
-        let partyCode = '';
-        let players = [];          // { name, balance, id }
+        let players = [];
         let currentRound = 1;
-        let bets = {};             // playerId → { team, amount }
-        let armySizes = { red: 15, blue: 15, green: 15, yellow: 15 };
-        let broadcastChannel = null;
+        let bets = {};
         let isHost = false;
+        let myName = '';
+        let myPlayerId = null;
+        let nextPlayerId = 0;
+        let startingBalance = 1000;
+        let peerConnections = [];
+        let guestDC = null;
 
-        // ─── PARTY CODE GENERATION ───────────────────────────────────
-        function generatePartyCode() {
-            const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
-            let code = '';
-            const arr = new Uint32Array(4);
-            crypto.getRandomValues(arr);
-            for (let i = 0; i < 4; i++) code += chars[arr[i] % chars.length];
-            return code;
+        function encodeSDP(sdp) { return btoa(JSON.stringify(sdp)); }
+        function decodeSDP(str) { return JSON.parse(atob(str)); }
+
+        // Seeded PRNG so both host & guest produce the same battle
+        function mulberry32(a) {
+            return function () {
+                a |= 0; a = a + 0x6D2B79F5 | 0;
+                var t = Math.imul(a ^ a >>> 15, 1 | a);
+                t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+                return ((t ^ t >>> 14) >>> 0) / 4294967296;
+            };
         }
 
-        function initParty() {
-            partyCode = generatePartyCode();
-            document.getElementById('my-party-code').textContent = partyCode;
+        // ─── HOST FLOW ───────────────────────────────────────────
+        async function hostCreateOffer() {
+            const name = document.getElementById('host-name-input').value.trim();
+            if (!name) { showToast('Enter your name first!'); return; }
+            myName = name;
+            startingBalance = parseInt(document.getElementById('starting-balance').value, 10) || 1000;
             isHost = true;
-            setupBroadcastChannel();
+            myPlayerId = nextPlayerId++;
+            players = [{ name: myName, balance: startingBalance, id: myPlayerId, isLocal: true }];
+            renderPlayerList(); updatePeerCount();
+
+            await createHostOffer();
+
+            document.getElementById('host-step-1').style.display = 'none';
+            document.getElementById('host-step-2').style.display = '';
+            document.getElementById('host-step-3').style.display = '';
+            document.getElementById('host-connected-area').style.display = '';
         }
 
-        function setupBroadcastChannel() {
-            if (broadcastChannel) broadcastChannel.close();
-            broadcastChannel = new BroadcastChannel('stickman-bets-' + partyCode);
-            broadcastChannel.onmessage = handleBroadcast;
+        async function createHostOffer() {
+            const pc = new RTCPeerConnection(RTC_CONFIG);
+            const dc = pc.createDataChannel('bets', { ordered: true });
+            const peer = { pc, dc, name: null, id: null };
+
+            dc.onopen = () => {
+                peer.dc = dc;
+                dc.send(JSON.stringify({ type: 'welcome', startingBalance, players, round: currentRound }));
+            };
+            dc.onmessage = (e) => handleHostMsg(peer, e);
+            dc.onclose = () => peerDisconnected(peer);
+            peer.dc = dc;
+            peerConnections.push(peer);
+
+            const offer = await pc.createOffer();
+            await pc.setLocalDescription(offer);
+            await waitForICE(pc);
+
+            document.getElementById('host-offer-text').value = encodeSDP(pc.localDescription);
+            document.getElementById('host-answer-text').value = '';
         }
 
-        function handleBroadcast(e) {
-            const msg = e.data;
+        async function hostAcceptAnswer() {
+            const txt = document.getElementById('host-answer-text').value.trim();
+            if (!txt) { showToast('Paste the response code!'); return; }
+            try {
+                const answer = decodeSDP(txt);
+                const peer = peerConnections[peerConnections.length - 1];
+                await peer.pc.setRemoteDescription(new RTCSessionDescription(answer));
+                showToast('Connecting...');
+                document.getElementById('host-answer-text').value = '';
+                document.getElementById('host-add-peer-btn').style.display = '';
+            } catch { showToast('Invalid response code!'); }
+        }
+
+        async function hostAddPeer() {
+            await createHostOffer();
+            showToast('New invite code generated — send it to the next friend!');
+        }
+
+        function handleHostMsg(peer, e) {
+            let msg; try { msg = JSON.parse(e.data); } catch { return; }
             if (!msg || typeof msg.type !== 'string') return;
 
-            if (msg.type === 'join-request' && isHost) {
-                // A new player wants to join
-                const name = String(msg.name).slice(0, 20);
-                if (players.some(p => p.name === name)) return;
-                const bal = parseInt(document.getElementById('starting-balance').value, 10) || 1000;
-                addPlayer(name, bal);
-                // Broadcast full state to all
-                broadcastChannel.postMessage({
-                    type: 'state-sync',
-                    players: players,
-                    armySizes: armySizes,
-                    round: currentRound,
-                });
+            if (msg.type === 'join') {
+                const name = String(msg.name || '').slice(0, 20);
+                if (!name || players.some(p => p.name === name)) { peer.dc.send(JSON.stringify({ type: 'error', msg: 'Name already taken' })); return; }
+                peer.name = name;
+                peer.id = nextPlayerId++;
+                players.push({ name, balance: startingBalance, id: peer.id, isLocal: false });
+                renderPlayerList(); updatePeerCount();
+                peer.dc.send(JSON.stringify({ type: 'joined', playerId: peer.id, players, round: currentRound, startingBalance }));
+                broadcastToAll({ type: 'player-list', players });
+                showToast(name + ' joined!');
             }
 
-            if (msg.type === 'state-sync' && !isHost) {
-                players = msg.players;
-                armySizes = msg.armySizes;
-                currentRound = msg.round;
-                renderPlayerList();
-            }
-
-            if (msg.type === 'start-betting' && !isHost) {
-                currentRound = msg.round;
-                armySizes = msg.armySizes;
-                players = msg.players;
-                showBettingPhase();
-            }
-
-            if (msg.type === 'battle-start' && !isHost) {
-                bets = msg.bets;
-                startBattle(msg.armySizes);
-            }
-
-            if (msg.type === 'results' && !isHost) {
-                players = msg.players;
-                showResults(msg.winner, msg.payouts);
+            if (msg.type === 'bet') {
+                bets[msg.playerId] = { team: msg.team, amount: msg.amount, odds: msg.odds };
+                checkAllBetsIn();
             }
         }
 
-        // ─── PLAYER MANAGEMENT ───────────────────────────────────────
-        let nextPlayerId = 0;
-
-        function addPlayer(name, balance) {
-            if (!name.trim()) return;
-            players.push({ name: name.trim(), balance, id: nextPlayerId++ });
-            renderPlayerList();
+        function peerDisconnected(peer) {
+            if (peer.name) {
+                players = players.filter(p => p.id !== peer.id);
+                renderPlayerList(); updatePeerCount();
+                broadcastToAll({ type: 'player-list', players });
+                showToast(peer.name + ' disconnected');
+            }
+            peerConnections = peerConnections.filter(p => p !== peer);
         }
 
-        function removePlayer(id) {
-            players = players.filter(p => p.id !== id);
-            renderPlayerList();
+        function broadcastToAll(msg) {
+            const str = JSON.stringify(msg);
+            for (const p of peerConnections) { if (p.dc && p.dc.readyState === 'open') p.dc.send(str); }
         }
 
+        function updatePeerCount() {
+            const n = players.length;
+            document.getElementById('peer-count').textContent = `(${n} player${n !== 1 ? 's' : ''})`;
+        }
+
+        // ─── GUEST FLOW ──────────────────────────────────────────
+        async function guestAcceptOffer() {
+            const name = document.getElementById('join-name-input').value.trim();
+            if (!name) { showToast('Enter your name first!'); return; }
+            myName = name;
+            const offerStr = document.getElementById('join-offer-text').value.trim();
+            if (!offerStr) { showToast('Paste the invite code!'); return; }
+
+            try {
+                const offer = decodeSDP(offerStr);
+                const pc = new RTCPeerConnection(RTC_CONFIG);
+
+                pc.ondatachannel = (ev) => {
+                    const dc = ev.channel;
+                    guestDC = dc;
+                    dc.onopen = () => { dc.send(JSON.stringify({ type: 'join', name: myName })); };
+                    dc.onmessage = (e) => handleGuestMsg(e);
+                    dc.onclose = () => { showToast('Disconnected from host'); guestDC = null; };
+                };
+
+                await pc.setRemoteDescription(new RTCSessionDescription(offer));
+                const answer = await pc.createAnswer();
+                await pc.setLocalDescription(answer);
+                await waitForICE(pc);
+
+                document.getElementById('join-answer-text').value = encodeSDP(pc.localDescription);
+                document.getElementById('join-step-1').style.display = 'none';
+                document.getElementById('join-step-2').style.display = '';
+            } catch { showToast('Invalid invite code!'); }
+        }
+
+        function handleGuestMsg(e) {
+            let msg; try { msg = JSON.parse(e.data); } catch { return; }
+            if (!msg || typeof msg.type !== 'string') return;
+
+            if (msg.type === 'welcome') { startingBalance = msg.startingBalance; players = msg.players; currentRound = msg.round; }
+            if (msg.type === 'joined') {
+                myPlayerId = msg.playerId; players = msg.players; currentRound = msg.round; startingBalance = msg.startingBalance;
+                document.getElementById('join-step-2').style.display = 'none';
+                document.getElementById('join-step-3').style.display = '';
+                showToast('Connected! Waiting for host...');
+            }
+            if (msg.type === 'error') showToast(msg.msg || 'Error');
+            if (msg.type === 'player-list') players = msg.players;
+            if (msg.type === 'start-betting') { currentRound = msg.round; players = msg.players; showGuestBetting(); }
+            if (msg.type === 'battle-seed') { startBattleFromSeed(msg.seed); }
+            if (msg.type === 'results') { players = msg.players; showResults(msg.winner, msg.payouts); }
+            if (msg.type === 'back-to-lobby') { guestBackToLobby(); }
+        }
+
+        function waitForICE(pc) {
+            return new Promise(resolve => {
+                if (pc.iceGatheringState === 'complete') resolve();
+                else pc.onicegatheringstatechange = () => { if (pc.iceGatheringState === 'complete') resolve(); };
+            });
+        }
+
+        // ─── PLAYER LIST ─────────────────────────────────────────
         function renderPlayerList() {
-            const ul = document.getElementById('player-list');
+            const ul = document.getElementById('player-list'); if (!ul) return;
             ul.innerHTML = '';
             players.forEach((p, i) => {
                 const li = document.createElement('li');
-                li.innerHTML = `
-          <span class="p-name">${escapeHtml(p.name)}${i === 0 ? '<span class="p-host">HOST</span>' : ''}</span>
-          <span class="p-balance">$${p.balance.toLocaleString()}</span>
-          ${players.length > 1 ? `<span class="p-remove" data-id="${p.id}">&times;</span>` : ''}
-        `;
+                const isMe = p.isLocal || p.id === myPlayerId;
+                li.innerHTML = `<span class="p-name">${escapeHtml(p.name)}${i === 0 ? '<span class="p-host">HOST</span>' : ''}${isMe ? ' <span style="color:#888;font-size:11px;">(you)</span>' : ''}</span><span class="p-balance">$${p.balance.toLocaleString()}</span>`;
                 ul.appendChild(li);
             });
-            ul.querySelectorAll('.p-remove').forEach(el => {
-                el.addEventListener('click', () => removePlayer(parseInt(el.dataset.id, 10)));
-            });
         }
+        function escapeHtml(str) { const d = document.createElement('div'); d.textContent = str; return d.innerHTML; }
 
-        function escapeHtml(str) {
-            const div = document.createElement('div');
-            div.textContent = str;
-            return div.innerHTML;
-        }
+        // ─── ODDS (equal armies → equal 3.4x) ────────────────────
+        function calculateOdds() { return { red: 3.4, blue: 3.4, green: 3.4, yellow: 3.4 }; }
 
-        // ─── ODDS CALCULATION ────────────────────────────────────────
-        function calculateOdds() {
-            const total = armySizes.red + armySizes.blue + armySizes.green + armySizes.yellow;
-            const active = TEAM_NAMES.filter(t => armySizes[t] > 0);
-            const odds = {};
-            for (const t of TEAM_NAMES) {
-                if (armySizes[t] <= 0) {
-                    odds[t] = 0;
-                    continue;
-                }
-                // Odds inversely proportional to army size — smaller army = bigger payout
-                const proportion = armySizes[t] / total;
-                // Multiplier: ranges ~1.2x for dominant team to ~8x for underdog
-                const rawMultiplier = (1 / proportion) * (active.length > 1 ? 0.85 : 1);
-                odds[t] = Math.round(rawMultiplier * 10) / 10;
-            }
-            return odds;
-        }
-
-        // ─── BETTING PHASE ───────────────────────────────────────────
+        // ─── BETTING (HOST) ──────────────────────────────────────
         function showBettingPhase() {
-            document.getElementById('lobby-overlay').classList.add('hidden');
-            document.getElementById('results-overlay').classList.add('hidden');
-            document.getElementById('betting-overlay').classList.remove('hidden');
-            document.getElementById('battle-hud').classList.add('hidden');
-
+            hideAll(); document.getElementById('betting-overlay').classList.remove('hidden');
             document.getElementById('round-number').textContent = currentRound;
-
-            const odds = calculateOdds();
-            const activeTeams = TEAM_NAMES.filter(t => armySizes[t] > 0);
-
-            // Show army preview
-            const preview = activeTeams.map(t =>
-                `<span style="color:${COLOURS[t].fill}">${t.charAt(0).toUpperCase() + t.slice(1)}: ${armySizes[t]}</span>`
-            ).join(' &nbsp;vs&nbsp; ');
-            document.getElementById('army-preview').innerHTML = '⚔️ ' + preview;
-
             bets = {};
             const container = document.getElementById('bet-sections');
             container.innerHTML = '';
-
-            for (const player of players) {
-                const section = document.createElement('div');
-                section.className = 'bet-section';
-                section.dataset.playerId = player.id;
-
-                let cardsHtml = '';
-                for (const t of activeTeams) {
-                    cardsHtml += `
-            <div class="team-bet-card" data-team="${t}" style="background:${COLOURS[t].fill}22;">
-              <div class="team-name" style="color:${COLOURS[t].fill}">${t.charAt(0).toUpperCase() + t.slice(1)}</div>
-              <div class="odds">${odds[t]}x</div>
-            </div>
-          `;
-                }
-
-                section.innerHTML = `
-          <div class="player-header">
-            <span class="name">${escapeHtml(player.name)}</span>
-            <span class="wallet">$${player.balance.toLocaleString()}</span>
-          </div>
-          <div class="team-bets" style="grid-template-columns: repeat(${activeTeams.length}, 1fr);">
-            ${cardsHtml}
-          </div>
-          <div class="bet-amount-row">
-            <button class="btn btn-outline quick-bet" data-pct="10">10%</button>
-            <button class="btn btn-outline quick-bet" data-pct="25">25%</button>
-            <button class="btn btn-outline quick-bet" data-pct="50">50%</button>
-            <button class="btn btn-outline quick-bet" data-pct="100">ALL IN</button>
-            <input type="number" class="bet-input" placeholder="$0" min="0" max="${player.balance}" value="0">
-          </div>
-        `;
-
-                container.appendChild(section);
-
-                // Wire up team card selection
-                const cards = section.querySelectorAll('.team-bet-card');
-                cards.forEach(card => {
-                    card.addEventListener('click', () => {
-                        cards.forEach(c => c.classList.remove('selected'));
-                        card.classList.add('selected');
-                    });
-                });
-
-                // Wire up quick bet buttons
-                const betInput = section.querySelector('.bet-input');
-                section.querySelectorAll('.quick-bet').forEach(btn => {
-                    btn.addEventListener('click', () => {
-                        const pct = parseInt(btn.dataset.pct, 10);
-                        betInput.value = Math.floor(player.balance * pct / 100);
-                    });
-                });
-            }
-        }
-
-        function collectBets() {
-            const sections = document.querySelectorAll('.bet-section');
             const odds = calculateOdds();
-            let valid = true;
+            const localPlayers = players.filter(p => p.isLocal);
+            for (const p of localPlayers) container.appendChild(makeBetSection(p, odds));
 
-            for (const section of sections) {
-                const playerId = parseInt(section.dataset.playerId, 10);
-                const player = players.find(p => p.id === playerId);
-                const selectedCard = section.querySelector('.team-bet-card.selected');
-                const betInput = section.querySelector('.bet-input');
-                const amount = parseInt(betInput.value, 10) || 0;
-
-                if (!selectedCard || amount <= 0) {
-                    // Skip this player — no bet placed
-                    bets[playerId] = { team: null, amount: 0, odds: 0 };
-                    continue;
-                }
-
-                const team = selectedCard.dataset.team;
-
-                if (amount > player.balance) {
-                    betInput.style.borderColor = '#e74c3c';
-                    valid = false;
-                    continue;
-                }
-
-                bets[playerId] = { team, amount, odds: odds[team] };
+            const remoteCount = players.filter(p => !p.isLocal).length;
+            if (remoteCount > 0) {
+                const w = document.createElement('p');
+                w.id = 'waiting-for-bets';
+                w.style.cssText = 'text-align:center; color:#888; font-size:13px; margin-top:12px;';
+                w.innerHTML = '<span class="status-dot waiting"></span>Waiting for ' + remoteCount + ' player' + (remoteCount > 1 ? 's' : '') + ' to bet...';
+                container.appendChild(w);
             }
 
-            return valid;
+            const lockBtn = document.getElementById('lock-bets-btn');
+            lockBtn.textContent = 'Lock Bets & Fight!';
+            lockBtn.disabled = false;
+            lockBtn.onclick = hostLockBets;
+
+            broadcastToAll({ type: 'start-betting', round: currentRound, players });
         }
 
-        // ─── BATTLE ──────────────────────────────────────────────────
-        function startBattle(sizes) {
-            document.getElementById('betting-overlay').classList.add('hidden');
+        // ─── BETTING (GUEST) ─────────────────────────────────────
+        function showGuestBetting() {
+            hideAll(); document.getElementById('betting-overlay').classList.remove('hidden');
+            document.getElementById('round-number').textContent = currentRound;
+            const container = document.getElementById('bet-sections');
+            container.innerHTML = '';
+            const odds = calculateOdds();
+            const me = players.find(p => p.id === myPlayerId);
+            if (me) container.appendChild(makeBetSection(me, odds));
+
+            const lockBtn = document.getElementById('lock-bets-btn');
+            lockBtn.textContent = 'Submit Bet';
+            lockBtn.disabled = false;
+            lockBtn.onclick = guestSubmitBet;
+        }
+
+        function guestSubmitBet() {
+            const odds = calculateOdds();
+            const section = document.querySelector('.bet-section');
+            if (!section) return;
+            const selected = section.querySelector('.team-bet-card.selected');
+            const input = section.querySelector('.bet-input');
+            const amount = parseInt(input.value, 10) || 0;
+            const me = players.find(p => p.id === myPlayerId);
+            if (!me) return;
+
+            if (!selected || amount <= 0) {
+                if (guestDC) guestDC.send(JSON.stringify({ type: 'bet', playerId: myPlayerId, team: null, amount: 0, odds: 0 }));
+                showToast('No bet placed — watching!');
+            } else {
+                const team = selected.dataset.team;
+                if (amount > me.balance) { showToast('Not enough money!'); return; }
+                if (guestDC) guestDC.send(JSON.stringify({ type: 'bet', playerId: myPlayerId, team, amount, odds: odds[team] }));
+                showToast('Bet $' + amount.toLocaleString() + ' on ' + team + '!');
+            }
+            document.getElementById('lock-bets-btn').disabled = true;
+            document.getElementById('lock-bets-btn').textContent = 'Waiting for battle...';
+        }
+
+        function checkAllBetsIn() {
+            const remote = players.filter(p => !p.isLocal);
+            if (remote.every(p => bets[p.id] !== undefined)) {
+                const el = document.getElementById('waiting-for-bets');
+                if (el) el.innerHTML = '<span class="status-dot connected"></span>All bets are in!';
+            }
+        }
+
+        function hostLockBets() {
+            if (!collectHostBets()) return;
+            const seedArr = new Uint32Array(1);
+            crypto.getRandomValues(seedArr);
+            const seed = seedArr[0];
+            broadcastToAll({ type: 'battle-seed', seed });
+            startBattleFromSeed(seed);
+        }
+
+        function collectHostBets() {
+            const odds = calculateOdds();
+            for (const section of document.querySelectorAll('.bet-section')) {
+                const pid = parseInt(section.dataset.playerId, 10);
+                const player = players.find(p => p.id === pid);
+                if (!player || !player.isLocal) continue;
+                const sel = section.querySelector('.team-bet-card.selected');
+                const inp = section.querySelector('.bet-input');
+                const amt = parseInt(inp.value, 10) || 0;
+                if (!sel || amt <= 0) { bets[pid] = { team: null, amount: 0, odds: 0 }; continue; }
+                const team = sel.dataset.team;
+                if (amt > player.balance) { showToast('Bet exceeds your balance!'); return false; }
+                bets[pid] = { team, amount: amt, odds: odds[team] };
+            }
+            return true;
+        }
+
+        function makeBetSection(player, odds) {
+            const section = document.createElement('div');
+            section.className = 'bet-section';
+            section.dataset.playerId = player.id;
+            let cards = '';
+            for (const t of TEAM_NAMES) {
+                cards += '<div class="team-bet-card" data-team="' + t + '" style="background:' + COLOURS[t].fill + '22;"><div class="team-name" style="color:' + COLOURS[t].fill + '">' + t.charAt(0).toUpperCase() + t.slice(1) + '</div><div class="odds">' + odds[t] + 'x</div></div>';
+            }
+            section.innerHTML = '<div class="player-header"><span class="name">' + escapeHtml(player.name) + '</span><span class="wallet">$' + player.balance.toLocaleString() + '</span></div><div class="team-bets">' + cards + '</div><div class="bet-amount-row"><button class="btn btn-outline quick-bet" data-pct="10">10%</button><button class="btn btn-outline quick-bet" data-pct="25">25%</button><button class="btn btn-outline quick-bet" data-pct="50">50%</button><button class="btn btn-outline quick-bet" data-pct="100">ALL IN</button><input type="number" class="bet-input" placeholder="$0" min="0" max="' + player.balance + '" value="0"></div>';
+            setTimeout(() => {
+                const cs = section.querySelectorAll('.team-bet-card');
+                cs.forEach(c => c.addEventListener('click', () => { cs.forEach(x => x.classList.remove('selected')); c.classList.add('selected'); }));
+                const inp = section.querySelector('.bet-input');
+                section.querySelectorAll('.quick-bet').forEach(b => b.addEventListener('click', () => { inp.value = Math.floor(player.balance * parseInt(b.dataset.pct, 10) / 100); }));
+            }, 0);
+            return section;
+        }
+
+        // ─── BATTLE ──────────────────────────────────────────────
+        function startBattleFromSeed(seed) {
+            hideAll();
             document.getElementById('battle-hud').classList.remove('hidden');
             document.getElementById('commentary').classList.remove('hidden');
-
-            // Clear and spawn armies
-            stickmen.length = 0;
-            corpses.length = 0;
-            nextId = 0;
-
-            for (const t of TEAM_NAMES) {
-                const count = sizes[t] || 0;
-                for (let i = 0; i < count; i++) stickmen.push(createStickman(t));
-            }
-
-            battleTimeElapsed = 0;
-            battleRunning = true;
+            stickmen.length = 0; corpses.length = 0; nextId = 0;
+            const rng = mulberry32(seed);
+            for (const t of TEAM_NAMES) for (let i = 0; i < ARMY_SIZE; i++) stickmen.push(createStickman(t, rng));
+            battleTimeElapsed = 0; battleRunning = true;
             startCommentary();
         }
 
         function updateBattleHUD() {
             const counts = { red: 0, blue: 0, green: 0, yellow: 0 };
             for (const s of stickmen) counts[s.colour]++;
-            for (const t of TEAM_NAMES) {
-                document.getElementById('hud-' + t).textContent = counts[t];
-            }
-            const mins = Math.floor(battleTimeElapsed / 60);
-            const secs = Math.floor(battleTimeElapsed % 60);
-            document.getElementById('battle-timer').textContent =
-                `${mins}:${secs.toString().padStart(2, '0')}`;
+            for (const t of TEAM_NAMES) document.getElementById('hud-' + t).textContent = counts[t];
+            const m = Math.floor(battleTimeElapsed / 60), s = Math.floor(battleTimeElapsed % 60);
+            document.getElementById('battle-timer').textContent = m + ':' + String(s).padStart(2, '0');
         }
 
         function checkBattleEnd() {
             if (!battleRunning) return;
             const alive = new Set(stickmen.map(s => s.colour));
-            if (alive.size <= 1) {
-                battleRunning = false;
-                const winner = alive.size === 1 ? [...alive][0] : null;
-                setTimeout(() => endBattle(winner), 800);
-            }
+            if (alive.size <= 1) { battleRunning = false; const w = alive.size === 1 ? [...alive][0] : null; setTimeout(() => endBattle(w), 800); }
         }
 
         function endBattle(winner) {
             document.getElementById('battle-hud').classList.add('hidden');
             document.getElementById('commentary').classList.add('hidden');
-
-            // Calculate payouts
             const payouts = [];
-            for (const player of players) {
-                const bet = bets[player.id];
-                if (!bet || !bet.team || bet.amount <= 0) {
-                    payouts.push({ playerId: player.id, name: player.name, team: null, amount: 0, payout: 0 });
-                    continue;
-                }
-
-                if (winner && bet.team === winner) {
-                    // Winner: get back bet + profit based on odds
-                    const profit = Math.floor(bet.amount * bet.odds) - bet.amount;
-                    player.balance += profit;
-                    payouts.push({ playerId: player.id, name: player.name, team: bet.team, amount: bet.amount, payout: profit });
+            for (const p of players) {
+                const b = bets[p.id];
+                if (!b || !b.team || b.amount <= 0) { payouts.push({ playerId: p.id, name: p.name, team: null, amount: 0, payout: 0 }); continue; }
+                if (winner && b.team === winner) {
+                    const profit = Math.floor(b.amount * b.odds) - b.amount;
+                    p.balance += profit;
+                    payouts.push({ playerId: p.id, name: p.name, team: b.team, amount: b.amount, payout: profit });
                 } else {
-                    // Loser: lose bet amount
-                    player.balance -= bet.amount;
-                    if (player.balance < 0) player.balance = 0;
-                    payouts.push({ playerId: player.id, name: player.name, team: bet.team, amount: bet.amount, payout: -bet.amount });
+                    p.balance -= b.amount; if (p.balance < 0) p.balance = 0;
+                    payouts.push({ playerId: p.id, name: p.name, team: b.team, amount: b.amount, payout: -b.amount });
                 }
             }
-
-            if (isHost && broadcastChannel) {
-                broadcastChannel.postMessage({ type: 'results', winner, payouts, players });
-            }
-
+            if (isHost) broadcastToAll({ type: 'results', winner, payouts, players });
             showResults(winner, payouts);
         }
 
         function showResults(winner, payouts) {
             document.getElementById('results-overlay').classList.remove('hidden');
             document.getElementById('result-round').textContent = currentRound;
-
             const banner = document.getElementById('winner-banner');
-            if (winner) {
-                banner.textContent = `🏆 ${winner.toUpperCase()} WINS!`;
-                banner.style.color = COLOURS[winner].fill;
-                spawnConfetti(COLOURS[winner].fill);
-            } else {
-                banner.textContent = '💀 DRAW!';
-                banner.style.color = '#888';
-            }
+            if (winner) { banner.textContent = '\u{1F3C6} ' + winner.toUpperCase() + ' WINS!'; banner.style.color = COLOURS[winner].fill; spawnConfetti(COLOURS[winner].fill); }
+            else { banner.textContent = '\u{1F480} DRAW!'; banner.style.color = '#888'; }
+            const sc = stickmen.filter(s => s.colour === winner).length;
+            document.getElementById('winner-sub').textContent = winner ? sc + ' survivor' + (sc !== 1 ? 's' : '') + ' standing after ' + formatTime(battleTimeElapsed) : 'Everyone wiped each other out!';
 
-            const survivorCount = stickmen.filter(s => s.colour === winner).length;
-            document.getElementById('winner-sub').textContent = winner
-                ? `${survivorCount} survivor${survivorCount !== 1 ? 's' : ''} standing after ${formatTime(battleTimeElapsed)}`
-                : 'Everyone wiped each other out!';
-
-            // Payout table
-            const tbody = document.getElementById('payout-body');
-            tbody.innerHTML = '';
+            const tbody = document.getElementById('payout-body'); tbody.innerHTML = '';
             for (const p of payouts) {
-                const player = players.find(pl => pl.id === p.playerId);
-                const teamLabel = p.team
-                    ? `<span style="color:${COLOURS[p.team].fill}">${p.team.charAt(0).toUpperCase() + p.team.slice(1)}</span> ($${p.amount.toLocaleString()})`
-                    : '<span style="color:#666">No bet</span>';
-                const payoutClass = p.payout > 0 ? 'positive' : p.payout < 0 ? 'negative' : 'zero';
-                const payoutLabel = p.payout > 0 ? `+$${p.payout.toLocaleString()}` : p.payout < 0 ? `-$${Math.abs(p.payout).toLocaleString()}` : '—';
+                const pl = players.find(x => x.id === p.playerId);
+                const tl = p.team ? '<span style="color:' + COLOURS[p.team].fill + '">' + p.team.charAt(0).toUpperCase() + p.team.slice(1) + '</span> ($' + p.amount.toLocaleString() + ')' : '<span style="color:#666">No bet</span>';
+                const cls = p.payout > 0 ? 'positive' : p.payout < 0 ? 'negative' : 'zero';
+                const lbl = p.payout > 0 ? '+$' + p.payout.toLocaleString() : p.payout < 0 ? '-$' + Math.abs(p.payout).toLocaleString() : '\u2014';
                 const tr = document.createElement('tr');
-                tr.innerHTML = `
-          <td>${escapeHtml(p.name)}</td>
-          <td>${teamLabel}</td>
-          <td class="${payoutClass}">${payoutLabel}</td>
-          <td>$${player ? player.balance.toLocaleString() : '?'}</td>
-        `;
+                tr.innerHTML = '<td>' + escapeHtml(p.name) + '</td><td>' + tl + '</td><td class="' + cls + '">' + lbl + '</td><td>$' + (pl ? pl.balance.toLocaleString() : '?') + '</td>';
                 tbody.appendChild(tr);
             }
 
-            // Scoreboard
-            const board = document.getElementById('scoreboard');
-            board.innerHTML = '';
-            const sorted = [...players].sort((a, b) => b.balance - a.balance);
-            sorted.forEach((p, i) => {
-                const medals = ['🥇', '🥈', '🥉'];
-                const rank = i < 3 ? medals[i] : `${i + 1}.`;
-                const row = document.createElement('div');
-                row.className = 'scoreboard-row';
-                const balColor = p.balance > 0 ? '#2ecc71' : '#e74c3c';
-                row.innerHTML = `
-          <span class="rank">${rank}</span>
-          <span class="s-name">${escapeHtml(p.name)}</span>
-          <span class="s-balance" style="color:${balColor}">$${p.balance.toLocaleString()}</span>
-        `;
+            const board = document.getElementById('scoreboard'); board.innerHTML = '';
+            [...players].sort((a, b) => b.balance - a.balance).forEach((p, i) => {
+                const medals = ['\u{1F947}', '\u{1F948}', '\u{1F949}'];
+                const row = document.createElement('div'); row.className = 'scoreboard-row';
+                row.innerHTML = '<span class="rank">' + (i < 3 ? medals[i] : (i + 1) + '.') + '</span><span class="s-name">' + escapeHtml(p.name) + '</span><span class="s-balance" style="color:' + (p.balance > 0 ? '#2ecc71' : '#e74c3c') + '">$' + p.balance.toLocaleString() + '</span>';
                 board.appendChild(row);
             });
+
+            // Show/hide host-only buttons
+            document.getElementById('next-round-btn').style.display = isHost ? '' : 'none';
+            document.getElementById('back-lobby-btn').style.display = isHost ? '' : 'none';
         }
 
-        // ─── COMMENTARY SYSTEM ───────────────────────────────────────
+        // ─── COMMENTARY ──────────────────────────────────────────
         const commentaryEl = document.getElementById('commentary');
         let commentaryInterval = null;
-
         const COMMENTARY_LINES = [
-            () => {
-                const counts = {};
-                for (const t of TEAM_NAMES) counts[t] = stickmen.filter(s => s.colour === t).length;
-                const leading = TEAM_NAMES.filter(t => counts[t] > 0).sort((a, b) => counts[b] - counts[a])[0];
-                return leading ? `${leading.charAt(0).toUpperCase() + leading.slice(1)} is looking strong with ${counts[leading]} fighters!` : '';
-            },
-            () => {
-                const alive = TEAM_NAMES.filter(t => stickmen.some(s => s.colour === t));
-                return alive.length === 2 ? `It's down to ${alive[0]} vs ${alive[1]}! 🔥` : '';
-            },
-            () => {
-                const total = stickmen.length;
-                return total < 10 && total > 0 ? `Only ${total} fighter${total > 1 ? 's' : ''} remain! This is intense!` : '';
-            },
-            () => {
-                const fleeing = stickmen.filter(s => s.state === 'fleeing').length;
-                return fleeing > 5 ? `${fleeing} fighters are running for their lives! 😱` : '';
-            },
-            () => {
-                const fighting = stickmen.filter(s => s.state === 'attacking').length;
-                return fighting > 10 ? `Massive brawl! ${fighting} stickmen locked in combat! 💥` : '';
-            },
-            () => {
-                const elim = TEAM_NAMES.filter(t => !stickmen.some(s => s.colour === t) && (armySizes[t] || 0) > 0);
-                return elim.length > 0 ? `${elim.map(t => t.charAt(0).toUpperCase() + t.slice(1)).join(' and ')} ha${elim.length > 1 ? 've' : 's'} been eliminated! ☠️` : '';
-            },
+            () => { const c = {}; for (const t of TEAM_NAMES) c[t] = stickmen.filter(s => s.colour === t).length; const l = TEAM_NAMES.filter(t => c[t] > 0).sort((a, b) => c[b] - c[a])[0]; return l ? l.charAt(0).toUpperCase() + l.slice(1) + ' is leading with ' + c[l] + ' fighters!' : ''; },
+            () => { const a = TEAM_NAMES.filter(t => stickmen.some(s => s.colour === t)); return a.length === 2 ? 'Final showdown: ' + a[0] + ' vs ' + a[1] + '! \u{1F525}' : ''; },
+            () => { const n = stickmen.length; return n < 20 && n > 0 ? 'Only ' + n + ' remain! \u{1F631}' : ''; },
+            () => { const f = stickmen.filter(s => s.state === 'fleeing').length; return f > 10 ? f + ' fighters fleeing! \u{1F631}' : ''; },
+            () => { const f = stickmen.filter(s => s.state === 'attacking').length; return f > 20 ? 'Massive brawl! ' + f + ' in combat! \u{1F4A5}' : ''; },
+            () => { const e = TEAM_NAMES.filter(t => !stickmen.some(s => s.colour === t)); return e.length > 0 && e.length < 4 ? e.map(t => t.charAt(0).toUpperCase() + t.slice(1)).join(' & ') + ' eliminated! \u{2620}\u{FE0F}' : ''; },
         ];
-
         function startCommentary() {
             if (commentaryInterval) clearInterval(commentaryInterval);
-            showCommentary("Let the battle begin! ⚔️");
+            showCommentary("200 vs 200 vs 200 vs 200 \u2014 LET'S GO! \u2694\uFE0F");
             commentaryInterval = setInterval(() => {
                 if (!battleRunning) { clearInterval(commentaryInterval); return; }
-                // Pick a random commentary that returns non-empty
-                const shuffled = COMMENTARY_LINES.sort(() => Math.random() - 0.5);
-                for (const fn of shuffled) {
-                    const line = fn();
-                    if (line) { showCommentary(line); break; }
-                }
+                const shuffled = [...COMMENTARY_LINES].sort(() => Math.random() - 0.5);
+                for (const fn of shuffled) { const l = fn(); if (l) { showCommentary(l); break; } }
             }, 3500);
         }
+        function showCommentary(t) { commentaryEl.textContent = t; commentaryEl.classList.remove('hidden'); }
 
-        function showCommentary(text) {
-            commentaryEl.textContent = text;
-            commentaryEl.classList.remove('hidden');
-        }
-
-        // ─── CONFETTI ────────────────────────────────────────────────
+        // ─── CONFETTI ────────────────────────────────────────────
         function spawnConfetti(colour) {
             for (let i = 0; i < 60; i++) {
-                const piece = document.createElement('div');
-                piece.className = 'confetti-piece';
-                const hue = Math.random() * 40 - 20;
-                piece.style.background = colour;
-                piece.style.left = Math.random() * 100 + 'vw';
-                piece.style.top = -20 + 'px';
-                piece.style.animationDelay = Math.random() * 1.5 + 's';
-                piece.style.animationDuration = 2 + Math.random() * 2 + 's';
-                piece.style.width = 6 + Math.random() * 8 + 'px';
-                piece.style.height = 6 + Math.random() * 10 + 'px';
-                piece.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
-                piece.style.opacity = 0.7 + Math.random() * 0.3;
-                document.body.appendChild(piece);
-                setTimeout(() => piece.remove(), 4500);
+                const p = document.createElement('div'); p.className = 'confetti-piece';
+                p.style.background = colour; p.style.left = Math.random() * 100 + 'vw'; p.style.top = '-20px';
+                p.style.animationDelay = Math.random() * 1.5 + 's'; p.style.animationDuration = 2 + Math.random() * 2 + 's';
+                p.style.width = 6 + Math.random() * 8 + 'px'; p.style.height = 6 + Math.random() * 10 + 'px';
+                p.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px'; p.style.opacity = 0.7 + Math.random() * 0.3;
+                document.body.appendChild(p); setTimeout(() => p.remove(), 4500);
             }
         }
 
-        // ─── UTILITY ─────────────────────────────────────────────────
-        function formatTime(sec) {
-            const m = Math.floor(sec / 60);
-            const s = Math.floor(sec % 60);
-            return m > 0 ? `${m}m ${s}s` : `${s}s`;
-        }
-
-        function showToast(msg) {
-            const t = document.createElement('div');
-            t.className = 'toast';
-            t.textContent = msg;
-            document.body.appendChild(t);
-            setTimeout(() => t.remove(), 2200);
+        // ─── UTIL ────────────────────────────────────────────────
+        function formatTime(sec) { const m = Math.floor(sec / 60), s = Math.floor(sec % 60); return m > 0 ? m + 'm ' + s + 's' : s + 's'; }
+        function showToast(msg) { const t = document.createElement('div'); t.className = 'toast'; t.textContent = msg; document.body.appendChild(t); setTimeout(() => t.remove(), 2200); }
+        function hideAll() {
+            document.getElementById('lobby-overlay').classList.add('hidden');
+            document.getElementById('betting-overlay').classList.add('hidden');
+            document.getElementById('results-overlay').classList.add('hidden');
+            document.getElementById('battle-hud').classList.add('hidden');
+            document.getElementById('commentary').classList.add('hidden');
         }
 
         // ═══════════════════════════════════════════════════════════════
-        // ─── EVENT WIRING ────────────────────────────────────────────
+        // EVENT WIRING
         // ═══════════════════════════════════════════════════════════════
-
-        // Tab switching
         document.querySelectorAll('.tab-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
-                document.getElementById('tab-create').style.display = btn.dataset.tab === 'create' ? '' : 'none';
+                document.getElementById('tab-host').style.display = btn.dataset.tab === 'host' ? '' : 'none';
                 document.getElementById('tab-join').style.display = btn.dataset.tab === 'join' ? '' : 'none';
             });
         });
 
-        // Add player
-        document.getElementById('add-player-btn').addEventListener('click', () => {
-            const input = document.getElementById('player-name-input');
-            const name = input.value.trim();
-            if (!name) return;
-            if (players.some(p => p.name === name)) { showToast('Name already taken!'); return; }
-            const bal = parseInt(document.getElementById('starting-balance').value, 10) || 1000;
-            addPlayer(name, bal);
-            input.value = '';
-            input.focus();
-        });
+        document.getElementById('host-create-btn').addEventListener('click', hostCreateOffer);
+        document.getElementById('host-copy-offer').addEventListener('click', () => { navigator.clipboard.writeText(document.getElementById('host-offer-text').value).then(() => showToast('Invite code copied!')); });
+        document.getElementById('host-accept-btn').addEventListener('click', hostAcceptAnswer);
+        document.getElementById('host-add-peer-btn').addEventListener('click', hostAddPeer);
+        document.getElementById('join-accept-offer-btn').addEventListener('click', guestAcceptOffer);
+        document.getElementById('join-copy-answer').addEventListener('click', () => { navigator.clipboard.writeText(document.getElementById('join-answer-text').value).then(() => showToast('Response code copied!')); });
 
-        document.getElementById('player-name-input').addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') document.getElementById('add-player-btn').click();
-        });
-
-        // Copy party code
-        document.getElementById('copy-code-btn').addEventListener('click', () => {
-            navigator.clipboard.writeText(partyCode).then(() => showToast('Party code copied!'));
-        });
-
-        // Join party
-        document.getElementById('join-party-btn').addEventListener('click', () => {
-            const code = document.getElementById('join-code-input').value.trim().toUpperCase();
-            if (code.length !== 4) { showToast('Enter a 4-letter code'); return; }
-            partyCode = code;
-            isHost = false;
-            setupBroadcastChannel();
-            const name = prompt('Enter your name:');
-            if (!name) return;
-            broadcastChannel.postMessage({ type: 'join-request', name: name.trim().slice(0, 20) });
-            showToast('Joining party ' + code + '...');
-            // Wait for state sync
-            document.getElementById('lobby-overlay').querySelector('.panel h1').textContent = 'Waiting for host...';
-        });
-
-        // Start betting
         document.getElementById('start-betting-btn').addEventListener('click', () => {
-            if (players.length < 1) { showToast('Add at least 1 player!'); return; }
-
-            // Read army sizes
-            armySizes = {
-                red: Math.max(0, Math.min(100, parseInt(document.getElementById('army-red').value, 10) || 0)),
-                blue: Math.max(0, Math.min(100, parseInt(document.getElementById('army-blue').value, 10) || 0)),
-                green: Math.max(0, Math.min(100, parseInt(document.getElementById('army-green').value, 10) || 0)),
-                yellow: Math.max(0, Math.min(100, parseInt(document.getElementById('army-yellow').value, 10) || 0)),
-            };
-
-            const totalArmy = armySizes.red + armySizes.blue + armySizes.green + armySizes.yellow;
-            if (totalArmy < 2) { showToast('Need at least 2 teams with fighters!'); return; }
-
-            const activeTeams = TEAM_NAMES.filter(t => armySizes[t] > 0);
-            if (activeTeams.length < 2) { showToast('Need at least 2 active teams!'); return; }
-
-            if (broadcastChannel) {
-                broadcastChannel.postMessage({
-                    type: 'start-betting',
-                    round: currentRound,
-                    armySizes,
-                    players,
-                });
-            }
-
+            if (players.length < 1) { showToast('Need at least 1 player!'); return; }
             showBettingPhase();
         });
 
-        // Lock bets & fight
-        document.getElementById('lock-bets-btn').addEventListener('click', () => {
-            if (!collectBets()) { showToast('Check your bet amounts!'); return; }
-
-            // Ensure at least one bet
-            const anyBet = Object.values(bets).some(b => b.team && b.amount > 0);
-            if (!anyBet) { showToast('At least one player must place a bet!'); return; }
-
-            if (broadcastChannel) {
-                broadcastChannel.postMessage({ type: 'battle-start', bets, armySizes });
-            }
-
-            startBattle(armySizes);
-        });
-
-        // Skip battle
         document.getElementById('skip-btn').addEventListener('click', () => {
             if (!battleRunning) return;
-            // Run simulation to completion in fast mode
-            let safetyCounter = 0;
-            while (battleRunning && safetyCounter < 200000) {
-                rebuildGroups();
-                updateAI(0.05);
-                updateCombat(0.05);
-                battleTimeElapsed += 0.05;
+            let safety = 0;
+            while (battleRunning && safety < 200000) {
+                rebuildGroups(); updateAI(0.05); updateCombat(0.05); battleTimeElapsed += 0.05;
                 const alive = new Set(stickmen.map(s => s.colour));
-                if (alive.size <= 1) {
-                    battleRunning = false;
-                    const winner = alive.size === 1 ? [...alive][0] : null;
-                    endBattle(winner);
-                    return;
-                }
-                safetyCounter++;
+                if (alive.size <= 1) { battleRunning = false; endBattle(alive.size === 1 ? [...alive][0] : null); return; }
+                safety++;
             }
-            // If we hit safety limit, force end
-            if (battleRunning) {
-                battleRunning = false;
-                const alive = new Set(stickmen.map(s => s.colour));
-                const winner = alive.size === 1 ? [...alive][0] : null;
-                endBattle(winner);
-            }
+            if (battleRunning) { battleRunning = false; const alive = new Set(stickmen.map(s => s.colour)); endBattle(alive.size === 1 ? [...alive][0] : null); }
         });
 
-        // Next round
         document.getElementById('next-round-btn').addEventListener('click', () => {
             currentRound++;
-            // Remove bankrupt players
-            const bankrupt = players.filter(p => p.balance <= 0);
-            if (bankrupt.length > 0) {
-                showToast(`${bankrupt.map(p => p.name).join(', ')} went broke! 💸`);
-                players = players.filter(p => p.balance > 0);
-            }
-            if (players.length < 1) {
-                showToast('Everyone is broke! Game over!');
-                backToLobby();
-                return;
-            }
-            showBettingPhase();
+            const broke = players.filter(p => p.balance <= 0);
+            if (broke.length > 0) { showToast(broke.map(p => p.name).join(', ') + ' went broke! \u{1F4B8}'); players = players.filter(p => p.balance > 0); }
+            if (players.length < 1) { showToast('Everyone is broke! Game over!'); backToLobby(); return; }
+            if (isHost) showBettingPhase();
         });
 
-        // Back to lobby
-        document.getElementById('back-lobby-btn').addEventListener('click', backToLobby);
+        document.getElementById('back-lobby-btn').addEventListener('click', () => { if (isHost) broadcastToAll({ type: 'back-to-lobby' }); backToLobby(); });
 
         function backToLobby() {
-            document.getElementById('results-overlay').classList.add('hidden');
-            document.getElementById('betting-overlay').classList.add('hidden');
-            document.getElementById('battle-hud').classList.add('hidden');
-            document.getElementById('commentary').classList.add('hidden');
-            document.getElementById('lobby-overlay').classList.remove('hidden');
-            document.getElementById('lobby-overlay').querySelector('.panel h1').textContent = 'STICKMAN BATTLE BETS';
-
-            battleRunning = false;
-            stickmen.length = 0;
-            corpses.length = 0;
-            currentRound = 1;
-            bets = {};
+            hideAll(); document.getElementById('lobby-overlay').classList.remove('hidden');
+            document.getElementById('lobby-title').textContent = 'STICKMAN BATTLE BETS';
+            battleRunning = false; stickmen.length = 0; corpses.length = 0; currentRound = 1; bets = {};
             renderPlayerList();
         }
 
-        // ─── INIT ────────────────────────────────────────────────────
-        initParty();
+        function guestBackToLobby() {
+            hideAll(); document.getElementById('lobby-overlay').classList.remove('hidden');
+            document.getElementById('lobby-title').textContent = 'STICKMAN BATTLE BETS';
+            battleRunning = false; stickmen.length = 0; corpses.length = 0; currentRound = 1; bets = {};
+        }
+
     </script>
 </body>
 
