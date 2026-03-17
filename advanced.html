@@ -474,6 +474,102 @@
     .advanced-content.open {
       max-height: 800px;
     }
+
+    /* ── Map Maker ───────────────────────────────────────── */
+    .map-options {
+      display: none;
+      margin-top: 12px;
+      padding: 12px;
+      background: rgba(255, 255, 255, 0.04);
+      border-radius: 10px;
+    }
+
+    .map-options.visible {
+      display: block;
+    }
+
+    .map-options label {
+      display: block;
+      color: #888;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 6px;
+    }
+
+    .map-tool-row {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-bottom: 10px;
+    }
+
+    .map-tool-btn {
+      border: 2px solid transparent;
+      border-radius: 8px;
+      padding: 6px 12px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      color: #fff;
+      transition: transform .1s, border-color .15s;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+    }
+
+    .map-tool-btn:hover {
+      transform: scale(1.06);
+    }
+
+    .map-tool-btn:active {
+      transform: scale(0.95);
+    }
+
+    .map-tool-btn.active {
+      border-color: #fff;
+      box-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+    }
+
+    .map-tool-btn.tool-wall {
+      background: #6b5b4f;
+    }
+
+    .map-tool-btn.tool-hazard {
+      background: #c0392b;
+    }
+
+    .map-tool-btn.tool-water {
+      background: #2471a3;
+    }
+
+    .map-tool-btn.tool-eraser {
+      background: rgba(255, 255, 255, 0.12);
+      color: #ccc;
+    }
+
+    #map-clear-btn {
+      margin-top: 6px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 8px;
+      padding: 6px 14px;
+      font-size: 12px;
+      cursor: pointer;
+      color: #aaa;
+      background: rgba(255, 255, 255, 0.04);
+      transition: all .15s;
+      width: 100%;
+    }
+
+    #map-clear-btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: #fff;
+    }
+
+    .map-tool-desc {
+      color: #555;
+      font-size: 11px;
+      margin-top: 4px;
+      line-height: 1.4;
+    }
   </style>
 </head>
 
@@ -494,6 +590,7 @@
     <span class="toolbar-sep"></span>
     <button class="toolbar-btn" id="pause-btn">⏸ Pause</button>
     <button class="toolbar-btn" id="clear-btn">Clear All</button>
+    <button class="toolbar-btn" id="map-btn">🗺 Map</button>
     <button class="toolbar-btn" id="settings-btn">⚙ Settings</button>
   </div>
   <div id="settings-overlay"></div>
@@ -530,6 +627,31 @@
           <input type="checkbox" id="toggle-sides">
           <span class="toggle-slider"></span>
         </label>
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <h3>Map Maker</h3>
+      <div class="toggle-row">
+        <div>
+          <div class="toggle-label">Map Maker Mode</div>
+          <div class="toggle-desc">Draw walls, hazards &amp; water on the map</div>
+        </div>
+        <label class="toggle-switch">
+          <input type="checkbox" id="toggle-mapmaker">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+      <div class="map-options" id="map-options">
+        <label>Tool</label>
+        <div class="map-tool-row">
+          <button class="map-tool-btn tool-wall active" data-tool="wall">▧ Wall</button>
+          <button class="map-tool-btn tool-hazard" data-tool="hazard">☠ Hazard</button>
+          <button class="map-tool-btn tool-water" data-tool="water">≋ Water</button>
+          <button class="map-tool-btn tool-eraser" data-tool="eraser">✕ Eraser</button>
+        </div>
+        <div class="map-tool-desc" id="map-tool-desc">Solid barrier — stickmen can't pass through</div>
+        <button id="map-clear-btn">Clear Map</button>
       </div>
     </div>
 
@@ -615,6 +737,15 @@
     const HP_BAR_H = 3;
     const UI_TOP_MARGIN = 52;
     const DEATH_FADE_DUR = 0.35;  // seconds
+    const HAZARD_DPS = 60;         // damage per second from hazard zones
+    const WATER_SPEED_MULT = 0.4;  // speed multiplier inside water
+
+    // ─── Map element colours ─────────────────────────────────────────────
+    const MAP_COLOURS = {
+      wall: { fill: 'rgba(90, 78, 65, 0.92)', stroke: 'rgba(60, 50, 40, 0.95)' },
+      hazard: { fill: 'rgba(200, 45, 30, 0.45)', stroke: 'rgba(180, 30, 20, 0.7)' },
+      water: { fill: 'rgba(40, 120, 215, 0.30)', stroke: 'rgba(30, 100, 190, 0.5)' },
+    };
 
     // ─── Settings state ──────────────────────────────────────────────────
     let shapeMode = 'stickman'; // 'stickman' | 'circles'
@@ -622,6 +753,15 @@
     let bgColour = '#16213e';
     let bgImage = null;
     let sidesMode = false;
+
+    // ─── Map maker state ──────────────────────────────────────────────────
+    let mapMakerMode = false;
+    let mapMakerTool = 'wall';  // 'wall' | 'hazard' | 'water' | 'eraser'
+    const mapElements = [];     // { type, x, y, w, h }
+    let mapDragging = false;
+    let mapDragStart = null;
+    let mapDragCurrent = null;
+
     const SIDE_ZONES = {
       red: { xMin: 0, xMax: 0.5, yMin: 0, yMax: 1 },
       blue: { xMin: 0.5, xMax: 1, yMin: 0, yMax: 1 },
@@ -818,6 +958,18 @@
         }
       }
 
+      // Water slowdown — apply before velocity integration
+      for (const s of stickmen) {
+        for (const el of mapElements) {
+          if (el.type !== 'water') continue;
+          if (s.x >= el.x && s.x <= el.x + el.w && s.y >= el.y && s.y <= el.y + el.h) {
+            s.vx *= WATER_SPEED_MULT;
+            s.vy *= WATER_SPEED_MULT;
+            break;
+          }
+        }
+      }
+
       // Apply velocities & clamp to bounds
       for (const s of stickmen) {
         s.x += s.vx;
@@ -826,6 +978,33 @@
         const botPad = shapeMode === 'circles' ? circleRadius : LEG_H;
         s.x = Math.max(pad + 2, Math.min(canvas.width - pad - 2, s.x));
         s.y = Math.max(UI_TOP_MARGIN + pad + 2, Math.min(canvas.height - botPad - 2, s.y));
+      }
+
+      // Wall collisions — push stickmen out of wall rects
+      resolveWallCollisions();
+    }
+
+    // ─── Wall collision resolution ───────────────────────────────────────
+    function resolveWallCollisions() {
+      const pad = shapeMode === 'circles' ? circleRadius : 6;
+      for (const s of stickmen) {
+        for (const el of mapElements) {
+          if (el.type !== 'wall') continue;
+          // Expand wall rect by entity padding
+          const wx = el.x - pad, wy = el.y - pad;
+          const ww = el.w + pad * 2, wh = el.h + pad * 2;
+          if (s.x < wx || s.x > wx + ww || s.y < wy || s.y > wy + wh) continue;
+          // Compute penetration depths from each side
+          const fromLeft = s.x - wx;
+          const fromRight = (wx + ww) - s.x;
+          const fromTop = s.y - wy;
+          const fromBottom = (wy + wh) - s.y;
+          const minPen = Math.min(fromLeft, fromRight, fromTop, fromBottom);
+          if (minPen === fromLeft) s.x = wx;
+          else if (minPen === fromRight) s.x = wx + ww;
+          else if (minPen === fromTop) s.y = wy;
+          else s.y = wy + wh;
+        }
       }
     }
 
@@ -841,6 +1020,17 @@
             t.hp -= DAMAGE;
             s.attackCD = ATTACK_CD;
             s.punchT = 0.15;
+          }
+        }
+      }
+
+      // Hazard damage
+      for (const s of stickmen) {
+        for (const el of mapElements) {
+          if (el.type !== 'hazard') continue;
+          if (s.x >= el.x && s.x <= el.x + el.w && s.y >= el.y && s.y <= el.y + el.h) {
+            s.hp -= HAZARD_DPS * dt;
+            break;
           }
         }
       }
@@ -991,15 +1181,109 @@
         }
       }
 
+      // Draw map elements
+      drawMapElements();
+
       const drawFn = shapeMode === 'circles' ? drawCircleEntity : drawStickman;
       for (const c of corpses) drawFn(c, c.fadeT / DEATH_FADE_DUR * 0.6);
       for (const s of stickmen) drawFn(s, 1);
+
+      // Drag preview
+      if (mapDragging && mapDragStart && mapDragCurrent && mapMakerTool !== 'eraser') {
+        const rx = Math.min(mapDragStart.x, mapDragCurrent.x);
+        const ry = Math.min(mapDragStart.y, mapDragCurrent.y);
+        const rw = Math.abs(mapDragCurrent.x - mapDragStart.x);
+        const rh = Math.abs(mapDragCurrent.y - mapDragStart.y);
+        ctx.save();
+        ctx.setLineDash([6, 4]);
+        ctx.lineWidth = 2;
+        const mc = MAP_COLOURS[mapMakerTool] || MAP_COLOURS.wall;
+        ctx.strokeStyle = mc.stroke;
+        ctx.fillStyle = mc.fill;
+        ctx.globalAlpha = 0.5;
+        ctx.fillRect(rx, ry, rw, rh);
+        ctx.globalAlpha = 0.9;
+        ctx.strokeRect(rx, ry, rw, rh);
+        ctx.restore();
+      }
 
       // Update counters
       const counts = { red: 0, blue: 0, green: 0, yellow: 0 };
       for (const s of stickmen) counts[s.colour]++;
       for (const col of Object.keys(counts)) {
         document.getElementById('count-' + col).textContent = counts[col];
+      }
+    }
+
+    // ─── Draw map elements ────────────────────────────────────────────────
+    function drawMapElements() {
+      const now = performance.now() / 1000;
+      for (const el of mapElements) {
+        ctx.save();
+        if (el.type === 'wall') {
+          ctx.fillStyle = MAP_COLOURS.wall.fill;
+          ctx.fillRect(el.x, el.y, el.w, el.h);
+          // Brick pattern
+          ctx.strokeStyle = 'rgba(40, 32, 25, 0.4)';
+          ctx.lineWidth = 1;
+          for (let by = el.y + 10; by < el.y + el.h; by += 10) {
+            ctx.beginPath(); ctx.moveTo(el.x, by); ctx.lineTo(el.x + el.w, by); ctx.stroke();
+          }
+          for (let row = 0; row * 10 < el.h; row++) {
+            const offset = (row % 2) * 15;
+            for (let bx = el.x + offset; bx < el.x + el.w; bx += 30) {
+              ctx.beginPath(); ctx.moveTo(bx, el.y + row * 10); ctx.lineTo(bx, el.y + Math.min((row + 1) * 10, el.h)); ctx.stroke();
+            }
+          }
+          // Border
+          ctx.strokeStyle = MAP_COLOURS.wall.stroke;
+          ctx.lineWidth = 2;
+          ctx.strokeRect(el.x, el.y, el.w, el.h);
+        } else if (el.type === 'hazard') {
+          const pulse = 0.35 + Math.sin(now * 4) * 0.15;
+          ctx.globalAlpha = pulse;
+          ctx.fillStyle = MAP_COLOURS.hazard.fill;
+          ctx.fillRect(el.x, el.y, el.w, el.h);
+          // Spikes along top edge
+          ctx.globalAlpha = pulse + 0.2;
+          ctx.fillStyle = 'rgba(220, 50, 30, 0.7)';
+          const spikeW = 10, spikeH = 8;
+          for (let sx = el.x; sx + spikeW <= el.x + el.w; sx += spikeW) {
+            ctx.beginPath();
+            ctx.moveTo(sx, el.y); ctx.lineTo(sx + spikeW / 2, el.y - spikeH); ctx.lineTo(sx + spikeW, el.y);
+            ctx.fill();
+          }
+          // Spikes along bottom edge
+          for (let sx = el.x; sx + spikeW <= el.x + el.w; sx += spikeW) {
+            ctx.beginPath();
+            ctx.moveTo(sx, el.y + el.h); ctx.lineTo(sx + spikeW / 2, el.y + el.h + spikeH); ctx.lineTo(sx + spikeW, el.y + el.h);
+            ctx.fill();
+          }
+          ctx.globalAlpha = 1;
+          ctx.strokeStyle = MAP_COLOURS.hazard.stroke;
+          ctx.lineWidth = 1.5;
+          ctx.setLineDash([4, 3]);
+          ctx.strokeRect(el.x, el.y, el.w, el.h);
+        } else if (el.type === 'water') {
+          ctx.fillStyle = MAP_COLOURS.water.fill;
+          ctx.fillRect(el.x, el.y, el.w, el.h);
+          // Animated wave lines
+          ctx.strokeStyle = 'rgba(80, 170, 255, 0.25)';
+          ctx.lineWidth = 1;
+          for (let wy = el.y + 8; wy < el.y + el.h; wy += 12) {
+            ctx.beginPath();
+            for (let wx = el.x; wx <= el.x + el.w; wx += 2) {
+              const wave = Math.sin((wx + now * 60) * 0.08) * 2;
+              if (wx === el.x) ctx.moveTo(wx, wy + wave);
+              else ctx.lineTo(wx, wy + wave);
+            }
+            ctx.stroke();
+          }
+          ctx.strokeStyle = MAP_COLOURS.water.stroke;
+          ctx.lineWidth = 1.5;
+          ctx.strokeRect(el.x, el.y, el.w, el.h);
+        }
+        ctx.restore();
       }
     }
 
@@ -1051,10 +1335,18 @@
     togglePlace.addEventListener('change', () => {
       placeMode = togglePlace.checked;
       placeOptions.classList.toggle('visible', placeMode);
-      canvas.style.cursor = placeMode ? 'crosshair' : '';
+      // Mutual exclusivity with map maker
+      if (placeMode && mapMakerMode) {
+        mapMakerMode = false;
+        document.getElementById('toggle-mapmaker').checked = false;
+        document.getElementById('map-options').classList.remove('visible');
+        mapBtnEl.classList.remove('active');
+      }
+      updateCanvasCursor();
     });
 
     canvas.addEventListener('click', (e) => {
+      if (mapMakerMode) return; // map maker handles its own clicks
       if (!placeMode) return;
       const rect = canvas.getBoundingClientRect();
       const x = (e.clientX - rect.left) * (canvas.width / rect.width);
@@ -1063,6 +1355,54 @@
       const n = getSpawnCount();
       const spread = Math.min(40, n * 4);
       for (let i = 0; i < n; i++) stickmen.push(createStickmanAt(colour, x, y, spread));
+    });
+
+    // ─── Map maker canvas interaction ────────────────────────────────────
+    function canvasCoords(e) {
+      const rect = canvas.getBoundingClientRect();
+      return {
+        x: (e.clientX - rect.left) * (canvas.width / rect.width),
+        y: (e.clientY - rect.top) * (canvas.height / rect.height),
+      };
+    }
+
+    canvas.addEventListener('mousedown', (e) => {
+      if (!mapMakerMode) return;
+      const pos = canvasCoords(e);
+      if (mapMakerTool === 'eraser') {
+        // Remove last element under cursor
+        for (let i = mapElements.length - 1; i >= 0; i--) {
+          const el = mapElements[i];
+          if (pos.x >= el.x && pos.x <= el.x + el.w && pos.y >= el.y && pos.y <= el.y + el.h) {
+            mapElements.splice(i, 1);
+            break;
+          }
+        }
+      } else {
+        mapDragging = true;
+        mapDragStart = pos;
+        mapDragCurrent = pos;
+      }
+    });
+
+    canvas.addEventListener('mousemove', (e) => {
+      if (!mapDragging) return;
+      mapDragCurrent = canvasCoords(e);
+    });
+
+    canvas.addEventListener('mouseup', () => {
+      if (!mapDragging) return;
+      mapDragging = false;
+      if (!mapDragStart || !mapDragCurrent) return;
+      const rx = Math.min(mapDragStart.x, mapDragCurrent.x);
+      const ry = Math.min(mapDragStart.y, mapDragCurrent.y);
+      const rw = Math.abs(mapDragCurrent.x - mapDragStart.x);
+      const rh = Math.abs(mapDragCurrent.y - mapDragStart.y);
+      if (rw >= 10 && rh >= 10) {
+        mapElements.push({ type: mapMakerTool, x: rx, y: ry, w: rw, h: rh });
+      }
+      mapDragStart = null;
+      mapDragCurrent = null;
     });
 
     // ─── Sides mode ──────────────────────────────────────────────────────
@@ -1097,6 +1437,56 @@
     settingsBtn.addEventListener('click', openSettings);
     settingsClose.addEventListener('click', closeSettings);
     settingsOverlay.addEventListener('click', closeSettings);
+
+    // ─── Map Maker settings wiring ───────────────────────────────────────
+    const toggleMapMaker = document.getElementById('toggle-mapmaker');
+    const mapOptionsEl = document.getElementById('map-options');
+    const mapBtnEl = document.getElementById('map-btn');
+    const mapToolDesc = document.getElementById('map-tool-desc');
+    const MAP_TOOL_DESCS = {
+      wall: 'Solid barrier \u2014 stickmen can\'t pass through',
+      hazard: 'Danger zone \u2014 deals damage over time',
+      water: 'Slows stickmen down to 40% speed',
+      eraser: 'Click on an element to remove it',
+    };
+
+    function updateCanvasCursor() {
+      if (mapMakerMode) canvas.style.cursor = mapMakerTool === 'eraser' ? 'pointer' : 'crosshair';
+      else if (placeMode) canvas.style.cursor = 'crosshair';
+      else canvas.style.cursor = '';
+    }
+
+    function setMapMaker(on) {
+      mapMakerMode = on;
+      toggleMapMaker.checked = on;
+      mapOptionsEl.classList.toggle('visible', on);
+      mapBtnEl.classList.toggle('active', on);
+      // Mutual exclusivity with place mode
+      if (on && placeMode) {
+        placeMode = false;
+        togglePlace.checked = false;
+        placeOptions.classList.remove('visible');
+      }
+      updateCanvasCursor();
+    }
+
+    toggleMapMaker.addEventListener('change', () => setMapMaker(toggleMapMaker.checked));
+    mapBtnEl.addEventListener('click', () => setMapMaker(!mapMakerMode));
+
+    // Tool selection
+    document.querySelectorAll('.map-tool-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.map-tool-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        mapMakerTool = btn.dataset.tool;
+        mapToolDesc.textContent = MAP_TOOL_DESCS[mapMakerTool];
+        updateCanvasCursor();
+      });
+    });
+
+    document.getElementById('map-clear-btn').addEventListener('click', () => {
+      mapElements.length = 0;
+    });
 
     // ─── Advanced toggle ─────────────────────────────────────────────────
     const advancedToggle = document.getElementById('advanced-toggle');
