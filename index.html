@@ -4,16 +4,109 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>TheKoopaLinks</title>
+  <title>Stickman StIMulation</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #0f0f1a;
+      color: #e0e0e0;
+    }
+
+    .container {
+      text-align: center;
+      padding: 2rem;
+    }
+
+    h1 {
+      font-size: 2.8rem;
+      font-weight: 700;
+      margin-bottom: 0.4rem;
+      background: linear-gradient(135deg, #ff6b6b, #feca57, #48dbfb, #ff9ff3);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .subtitle {
+      font-size: 1rem;
+      color: #666;
+      margin-bottom: 3rem;
+      letter-spacing: 0.05em;
+    }
+
+    .links {
+      display: flex;
+      gap: 1.5rem;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .links a {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.75rem;
+      text-decoration: none;
+      padding: 2rem 2.5rem;
+      border-radius: 16px;
+      background: #1a1a2e;
+      border: 1px solid #2a2a3e;
+      color: #e0e0e0;
+      font-size: 1.1rem;
+      font-weight: 500;
+      transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+      min-width: 200px;
+    }
+
+    .links a:hover {
+      transform: translateY(-4px);
+      border-color: #48dbfb;
+      box-shadow: 0 8px 30px rgba(72, 219, 251, 0.15);
+    }
+
+    .links a .icon {
+      font-size: 2.4rem;
+    }
+
+    .links a .label {
+      font-size: 1.1rem;
+    }
+
+    .links a .desc {
+      font-size: 0.8rem;
+      color: #666;
+      font-weight: 400;
+    }
+  </style>
 </head>
 
 <body>
-  <h1>Welcome to TheKoopaLinks!</h1>
-
-  <a href="https://thekoopa.com/og">OG Game</a>
-  <br>
-  <a href="https://thekoopa.com/advanced">Advanced Game</a>
-
+  <div class="container">
+    <h1>Stickman StIMulation</h1>
+    <p class="subtitle">Pick your battlefield</p>
+    <div class="links">
+      <a href="/og">
+        <span class="icon">⚔️</span>
+        <span class="label">OG Game</span>
+        <span class="desc">The original classic</span>
+      </a>
+      <a href="/advanced">
+        <span class="icon">🧪</span>
+        <span class="label">Advanced Game</span>
+        <span class="desc">New features &amp; modes</span>
+      </a>
+    </div>
+  </div>
 </body>
 
 </html>
