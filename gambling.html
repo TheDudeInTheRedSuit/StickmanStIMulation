@@ -1,0 +1,1670 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stickman Battle Bets</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            overflow: hidden;
+            background: #0d0d1a;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            color: #e0e0e0;
+        }
+
+        canvas {
+            display: block;
+        }
+
+        /* ─── Overlays ─────────────────────────────────────────────── */
+        .overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(10px);
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .overlay.hidden {
+            display: none;
+        }
+
+        .panel {
+            background: linear-gradient(145deg, #1a1a2e, #16213e);
+            border: 1px solid #333;
+            border-radius: 16px;
+            padding: 32px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+        }
+
+        .panel h1 {
+            text-align: center;
+            font-size: 28px;
+            margin-bottom: 6px;
+            background: linear-gradient(135deg, #f1c40f, #e74c3c, #3498db, #2ecc71);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .panel h2 {
+            font-size: 18px;
+            margin: 20px 0 10px;
+            color: #f1c40f;
+            border-bottom: 1px solid #333;
+            padding-bottom: 6px;
+        }
+
+        .panel p.subtitle {
+            text-align: center;
+            color: #888;
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+
+        /* ─── Form Elements ───────────────────────────────────────── */
+        .input-row {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 10px;
+            align-items: center;
+        }
+
+        .input-row input[type="text"],
+        .input-row input[type="number"] {
+            flex: 1;
+            padding: 10px 14px;
+            border: 1px solid #444;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.06);
+            color: #fff;
+            font-size: 15px;
+        }
+
+        .input-row input:focus {
+            outline: none;
+            border-color: #f1c40f;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .btn {
+            border: none;
+            border-radius: 8px;
+            padding: 10px 20px;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform .1s, box-shadow .15s;
+        }
+
+        .btn:hover {
+            transform: scale(1.05);
+        }
+
+        .btn:active {
+            transform: scale(0.95);
+        }
+
+        .btn-gold {
+            background: linear-gradient(135deg, #f1c40f, #e67e22);
+            color: #1a1a2e;
+            box-shadow: 0 0 15px rgba(241, 196, 15, 0.3);
+        }
+
+        .btn-green {
+            background: linear-gradient(135deg, #2ecc71, #27ae60);
+            color: #fff;
+            box-shadow: 0 0 15px rgba(46, 204, 113, 0.3);
+        }
+
+        .btn-red {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            color: #fff;
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1px solid #555;
+            color: #ccc;
+        }
+
+        .btn-outline:hover {
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .btn-sm {
+            padding: 6px 14px;
+            font-size: 13px;
+        }
+
+        /* ─── Party Code ──────────────────────────────────────────── */
+        .party-code-box {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            background: rgba(241, 196, 15, 0.08);
+            border: 1px dashed #f1c40f;
+            border-radius: 10px;
+            padding: 14px;
+            margin: 12px 0;
+        }
+
+        .party-code {
+            font-family: 'Courier New', monospace;
+            font-size: 28px;
+            font-weight: 900;
+            letter-spacing: 6px;
+            color: #f1c40f;
+        }
+
+        /* ─── Player List ─────────────────────────────────────────── */
+        .player-list {
+            list-style: none;
+            margin: 10px 0;
+        }
+
+        .player-list li {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 12px;
+            background: rgba(255, 255, 255, 0.04);
+            border-radius: 8px;
+            margin-bottom: 6px;
+        }
+
+        .player-list li .p-name {
+            font-weight: 600;
+            font-size: 15px;
+        }
+
+        .player-list li .p-balance {
+            color: #2ecc71;
+            font-weight: 700;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .player-list li .p-host {
+            background: #f1c40f;
+            color: #1a1a2e;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 700;
+            margin-left: 8px;
+        }
+
+        .player-list li .p-remove {
+            cursor: pointer;
+            color: #e74c3c;
+            font-size: 18px;
+            padding: 0 4px;
+        }
+
+        .player-list li .p-remove:hover {
+            color: #ff6b6b;
+        }
+
+        /* ─── Betting Phase ───────────────────────────────────────── */
+        .bet-section {
+            margin-bottom: 16px;
+            padding: 14px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 10px;
+            border: 1px solid #2a2a3e;
+        }
+
+        .bet-section .player-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .bet-section .player-header .name {
+            font-size: 16px;
+            font-weight: 700;
+        }
+
+        .bet-section .player-header .wallet {
+            color: #2ecc71;
+            font-weight: 700;
+        }
+
+        .team-bets {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+        }
+
+        .team-bet-card {
+            text-align: center;
+            padding: 10px 6px;
+            border-radius: 8px;
+            border: 2px solid transparent;
+            cursor: pointer;
+            transition: border-color .15s, transform .1s;
+            position: relative;
+        }
+
+        .team-bet-card:hover {
+            transform: scale(1.04);
+        }
+
+        .team-bet-card.selected {
+            border-color: #fff;
+            box-shadow: 0 0 12px rgba(255, 255, 255, 0.2);
+        }
+
+        .team-bet-card .team-name {
+            font-weight: 700;
+            font-size: 13px;
+            margin-bottom: 4px;
+        }
+
+        .team-bet-card .odds {
+            font-size: 12px;
+            color: #aaa;
+        }
+
+        .bet-amount-row {
+            display: flex;
+            gap: 6px;
+            margin-top: 10px;
+            align-items: center;
+        }
+
+        .bet-amount-row input {
+            flex: 1;
+            padding: 8px 10px;
+            border: 1px solid #444;
+            border-radius: 6px;
+            background: rgba(255, 255, 255, 0.06);
+            color: #fff;
+            font-size: 14px;
+            text-align: center;
+        }
+
+        .bet-amount-row input:focus {
+            outline: none;
+            border-color: #f1c40f;
+        }
+
+        .quick-bet {
+            font-size: 12px;
+            padding: 6px 10px;
+        }
+
+        /* ─── Battle HUD ──────────────────────────────────────────── */
+        #battle-hud {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            padding: 10px 16px;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(6px);
+            z-index: 10;
+            flex-wrap: wrap;
+        }
+
+        #battle-hud.hidden {
+            display: none;
+        }
+
+        .team-counter {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .team-dot {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .team-count {
+            color: #ccc;
+            font-size: 16px;
+            font-weight: 700;
+            font-variant-numeric: tabular-nums;
+            min-width: 28px;
+            text-align: center;
+        }
+
+        #battle-timer {
+            color: #f1c40f;
+            font-size: 14px;
+            font-weight: 700;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .live-badge {
+            background: #e74c3c;
+            color: #fff;
+            padding: 3px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 700;
+            animation: pulse-live 1.5s ease-in-out infinite;
+        }
+
+        @keyframes pulse-live {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        #skip-btn {
+            border: 1px solid #555;
+            border-radius: 6px;
+            padding: 6px 14px;
+            font-size: 13px;
+            cursor: pointer;
+            color: #ccc;
+            background: transparent;
+        }
+
+        #skip-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        /* ─── Results Overlay ─────────────────────────────────────── */
+        .results-panel {
+            text-align: center;
+            max-width: 550px;
+        }
+
+        .results-panel .winner-banner {
+            font-size: 48px;
+            font-weight: 900;
+            margin: 10px 0;
+            text-shadow: 0 0 30px currentColor;
+        }
+
+        .results-panel .winner-sub {
+            font-size: 16px;
+            color: #aaa;
+            margin-bottom: 20px;
+        }
+
+        .payout-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 16px 0;
+        }
+
+        .payout-table th {
+            text-align: left;
+            padding: 8px 12px;
+            border-bottom: 1px solid #333;
+            color: #888;
+            font-size: 13px;
+        }
+
+        .payout-table td {
+            padding: 8px 12px;
+            border-bottom: 1px solid #222;
+            font-size: 14px;
+        }
+
+        .payout-table .positive {
+            color: #2ecc71;
+            font-weight: 700;
+        }
+
+        .payout-table .negative {
+            color: #e74c3c;
+            font-weight: 700;
+        }
+
+        .payout-table .zero {
+            color: #888;
+        }
+
+        /* ─── Scoreboard ──────────────────────────────────────────── */
+        .scoreboard {
+            width: 100%;
+            margin: 16px 0;
+        }
+
+        .scoreboard-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 14px;
+            background: rgba(255, 255, 255, 0.04);
+            border-radius: 8px;
+            margin-bottom: 6px;
+        }
+
+        .scoreboard-row .rank {
+            width: 28px;
+            font-weight: 900;
+            color: #f1c40f;
+            font-size: 16px;
+        }
+
+        .scoreboard-row .rank:nth-child(1) {
+            color: #f1c40f;
+        }
+
+        .scoreboard-row .s-name {
+            flex: 1;
+            font-weight: 600;
+        }
+
+        .scoreboard-row .s-balance {
+            font-weight: 700;
+            font-variant-numeric: tabular-nums;
+            font-size: 16px;
+        }
+
+        /* ─── Commentary ──────────────────────────────────────────── */
+        #commentary {
+            position: fixed;
+            bottom: 16px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(8px);
+            color: #f1c40f;
+            padding: 8px 24px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+            z-index: 20;
+            transition: opacity 0.3s;
+            pointer-events: none;
+            text-align: center;
+            max-width: 80%;
+        }
+
+        #commentary.hidden {
+            opacity: 0;
+        }
+
+        /* ─── Confetti ─────────────────────────────────────────────── */
+        .confetti-piece {
+            position: fixed;
+            width: 8px;
+            height: 12px;
+            z-index: 200;
+            pointer-events: none;
+            animation: confetti-fall 2.5s ease-in forwards;
+        }
+
+        @keyframes confetti-fall {
+            0% {
+                transform: translateY(0) rotate(0deg);
+                opacity: 1;
+            }
+
+            100% {
+                transform: translateY(100vh) rotate(720deg);
+                opacity: 0;
+            }
+        }
+
+        /* ─── Tabs ─────────────────────────────────────────────────── */
+        .tab-bar {
+            display: flex;
+            gap: 4px;
+            margin-bottom: 16px;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #333;
+            border-radius: 8px 8px 0 0;
+            background: transparent;
+            color: #888;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background .15s;
+        }
+
+        .tab-btn.active {
+            background: rgba(241, 196, 15, 0.1);
+            border-color: #f1c40f;
+            color: #f1c40f;
+        }
+
+        .tab-btn:hover:not(.active) {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        /* ─── Army Size Config ─────────────────────────────────────── */
+        .army-config {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+            margin: 10px 0;
+        }
+
+        .army-config label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px;
+            background: rgba(255, 255, 255, 0.04);
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .army-config label .dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .army-config input {
+            width: 50px;
+            padding: 4px 6px;
+            border: 1px solid #444;
+            border-radius: 4px;
+            background: rgba(255, 255, 255, 0.08);
+            color: #fff;
+            font-size: 13px;
+            text-align: center;
+            margin-left: auto;
+        }
+
+        .army-config input:focus {
+            outline: none;
+            border-color: #f1c40f;
+        }
+
+        /* ─── Misc ─────────────────────────────────────────────────── */
+        .text-center {
+            text-align: center;
+        }
+
+        .mt-12 {
+            margin-top: 12px;
+        }
+
+        .mt-16 {
+            margin-top: 16px;
+        }
+
+        .mb-6 {
+            margin-bottom: 6px;
+        }
+
+        .gap-8 {
+            gap: 8px;
+        }
+
+        .flex-center {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .w-full {
+            width: 100%;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 70px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(46, 204, 113, 0.9);
+            color: #fff;
+            padding: 8px 20px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            z-index: 300;
+            animation: toast-pop 2s ease forwards;
+        }
+
+        @keyframes toast-pop {
+            0% {
+                opacity: 0;
+                transform: translateX(-50%) translateY(10px);
+            }
+
+            15% {
+                opacity: 1;
+                transform: translateX(-50%) translateY(0);
+            }
+
+            85% {
+                opacity: 1;
+            }
+
+            100% {
+                opacity: 0;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- ─── LOBBY OVERLAY ────────────────────────────────────────── -->
+    <div id="lobby-overlay" class="overlay">
+        <div class="panel">
+            <h1>STICKMAN BATTLE BETS</h1>
+            <p class="subtitle">Place your bets. Watch them fight. Winner takes all.</p>
+
+            <div class="tab-bar">
+                <button class="tab-btn active" data-tab="create">Create Party</button>
+                <button class="tab-btn" data-tab="join">Join Party</button>
+            </div>
+
+            <!-- Create Party Tab -->
+            <div id="tab-create">
+                <div class="party-code-box">
+                    <span style="color:#aaa; font-size:13px;">PARTY CODE</span>
+                    <span class="party-code" id="my-party-code">----</span>
+                    <button class="btn btn-outline btn-sm" id="copy-code-btn">Copy</button>
+                </div>
+
+                <h2>Players</h2>
+                <div class="input-row">
+                    <input type="text" id="player-name-input" placeholder="Enter player name" maxlength="20">
+                    <button class="btn btn-gold btn-sm" id="add-player-btn">+ Add</button>
+                </div>
+                <ul class="player-list" id="player-list"></ul>
+
+                <h2>Starting Balance</h2>
+                <div class="input-row">
+                    <span style="color:#2ecc71; font-size:20px; font-weight:900;">$</span>
+                    <input type="number" id="starting-balance" value="1000" min="100" max="100000" step="100">
+                </div>
+
+                <h2>Army Size (per team)</h2>
+                <div class="army-config">
+                    <label><span class="dot" style="background:#e74c3c;"></span> Red <input type="number" id="army-red"
+                            value="15" min="1" max="100"></label>
+                    <label><span class="dot" style="background:#3498db;"></span> Blue <input type="number"
+                            id="army-blue" value="15" min="1" max="100"></label>
+                    <label><span class="dot" style="background:#2ecc71;"></span> Green <input type="number"
+                            id="army-green" value="15" min="1" max="100"></label>
+                    <label><span class="dot" style="background:#f1c40f;"></span> Yellow <input type="number"
+                            id="army-yellow" value="15" min="1" max="100"></label>
+                </div>
+
+                <div class="text-center mt-16">
+                    <button class="btn btn-gold w-full" id="start-betting-btn" style="padding:14px; font-size:16px;">
+                        Start Betting Round
+                    </button>
+                </div>
+            </div>
+
+            <!-- Join Party Tab -->
+            <div id="tab-join" style="display:none;">
+                <h2>Enter Party Code</h2>
+                <div class="input-row">
+                    <input type="text" id="join-code-input" placeholder="e.g. ABCD" maxlength="4"
+                        style="text-transform:uppercase; text-align:center; font-size:24px; letter-spacing:6px; font-weight:900;">
+                    <button class="btn btn-gold" id="join-party-btn">Join</button>
+                </div>
+                <p style="color:#888; font-size:13px; margin-top:8px; text-align:center;">
+                    Ask the host for the 4-letter party code. Everyone needs to be on the same network/browser.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ─── BETTING OVERLAY ──────────────────────────────────────── -->
+    <div id="betting-overlay" class="overlay hidden">
+        <div class="panel" style="max-width:700px;">
+            <h1>PLACE YOUR BETS</h1>
+            <p class="subtitle">Round <span id="round-number">1</span> — Choose your team and wager</p>
+
+            <div id="army-preview" style="text-align:center; margin-bottom:12px; color:#888; font-size:13px;"></div>
+
+            <div id="bet-sections"></div>
+
+            <div class="text-center mt-16">
+                <button class="btn btn-green w-full" id="lock-bets-btn" style="padding:14px; font-size:16px;">
+                    Lock Bets &amp; Fight!
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ─── RESULTS OVERLAY ──────────────────────────────────────── -->
+    <div id="results-overlay" class="overlay hidden">
+        <div class="panel results-panel">
+            <p style="font-size:14px; color:#888;">Round <span id="result-round">1</span> Results</p>
+            <div class="winner-banner" id="winner-banner">🏆 RED WINS!</div>
+            <p class="winner-sub" id="winner-sub"></p>
+
+            <table class="payout-table">
+                <thead>
+                    <tr>
+                        <th>Player</th>
+                        <th>Bet</th>
+                        <th>Payout</th>
+                        <th>Balance</th>
+                    </tr>
+                </thead>
+                <tbody id="payout-body"></tbody>
+            </table>
+
+            <h2 style="text-align:center;">Leaderboard</h2>
+            <div id="scoreboard"></div>
+
+            <div class="flex-center gap-8 mt-16">
+                <button class="btn btn-gold" id="next-round-btn" style="padding:12px 32px; font-size:15px;">Next
+                    Round</button>
+                <button class="btn btn-outline" id="back-lobby-btn">Back to Lobby</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ─── BATTLE HUD ──────────────────────────────────────────── -->
+    <div id="battle-hud" class="hidden">
+        <span class="live-badge">LIVE</span>
+        <div class="team-counter"><span class="team-dot" style="background:#e74c3c;"></span><span class="team-count"
+                id="hud-red">0</span></div>
+        <div class="team-counter"><span class="team-dot" style="background:#3498db;"></span><span class="team-count"
+                id="hud-blue">0</span></div>
+        <div class="team-counter"><span class="team-dot" style="background:#2ecc71;"></span><span class="team-count"
+                id="hud-green">0</span></div>
+        <div class="team-counter"><span class="team-dot" style="background:#f1c40f;"></span><span class="team-count"
+                id="hud-yellow">0</span></div>
+        <span id="battle-timer">0:00</span>
+        <button id="skip-btn">⏩ Skip</button>
+    </div>
+
+    <div id="commentary" class="hidden"></div>
+
+    <canvas id="arena"></canvas>
+
+    <script>
+        // ─── GAME CONSTANTS ──────────────────────────────────────────
+        const COLOURS = {
+            red: { fill: '#e74c3c', stroke: '#c0392b' },
+            blue: { fill: '#3498db', stroke: '#2980b9' },
+            green: { fill: '#2ecc71', stroke: '#27ae60' },
+            yellow: { fill: '#f1c40f', stroke: '#d4ac0f' },
+        };
+        const TEAM_NAMES = ['red', 'blue', 'green', 'yellow'];
+        const SPEED = 1.6;
+        const FLEE_SPEED = 2.2;
+        const CONTACT_RANGE = 22;
+        const ATTACK_RANGE = 20;
+        const ATTACK_CD = 0.5;
+        const DAMAGE = 12;
+        const MAX_HP = 100;
+        const SEPARATION = 14;
+        const HEAD_R = 6;
+        const BODY_H = 18;
+        const LEG_H = 14;
+        const ARM_LEN = 12;
+        const HP_BAR_W = 20;
+        const HP_BAR_H = 3;
+        const UI_TOP_MARGIN = 52;
+        const DEATH_FADE_DUR = 0.35;
+
+        // ─── CANVAS SETUP ────────────────────────────────────────────
+        const canvas = document.getElementById('arena');
+        const ctx = canvas.getContext('2d');
+        function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+        window.addEventListener('resize', resize);
+        resize();
+
+        // ─── ENTITY MODEL ────────────────────────────────────────────
+        let nextId = 0;
+        const stickmen = [];
+        const corpses = [];
+
+        function createStickman(colour) {
+            const margin = 40;
+            return {
+                id: nextId++,
+                x: margin + Math.random() * (canvas.width - margin * 2),
+                y: UI_TOP_MARGIN + margin + Math.random() * (canvas.height - UI_TOP_MARGIN - margin * 2),
+                vx: 0, vy: 0,
+                colour,
+                hp: MAX_HP, maxHp: MAX_HP,
+                groupId: null,
+                state: 'idle',
+                facing: 1,
+                target: null,
+                attackCD: 0,
+                punchT: 0,
+            };
+        }
+
+        // ─── GROUP TRACKING ──────────────────────────────────────────
+        let groups = {};
+        function rebuildGroups() {
+            const parent = {};
+            const find = (a) => { while (parent[a] !== a) { parent[a] = parent[parent[a]]; a = parent[a]; } return a; };
+            const union = (a, b) => { parent[find(a)] = find(b); };
+            for (const s of stickmen) parent[s.id] = s.id;
+            for (let i = 0; i < stickmen.length; i++) {
+                for (let j = i + 1; j < stickmen.length; j++) {
+                    const a = stickmen[i], b = stickmen[j];
+                    if (a.colour !== b.colour) continue;
+                    const dx = a.x - b.x, dy = a.y - b.y;
+                    if (dx * dx + dy * dy < CONTACT_RANGE * CONTACT_RANGE * 4) union(a.id, b.id);
+                }
+            }
+            groups = {};
+            for (const s of stickmen) {
+                const root = find(s.id);
+                s.groupId = root;
+                if (!groups[root]) groups[root] = new Set();
+                groups[root].add(s.id);
+            }
+        }
+        function groupSize(s) { return groups[s.groupId] ? groups[s.groupId].size : 1; }
+
+        // ─── AI & MOVEMENT ───────────────────────────────────────────
+        function updateAI(dt) {
+            for (const s of stickmen) {
+                let nearestEnemy = null, nearDist = Infinity;
+                for (const o of stickmen) {
+                    if (o.colour === s.colour) continue;
+                    const dx = o.x - s.x, dy = o.y - s.y;
+                    const d = Math.sqrt(dx * dx + dy * dy);
+                    if (d < nearDist) { nearDist = d; nearestEnemy = o; }
+                }
+                if (!nearestEnemy) { s.state = 'idle'; s.vx = 0; s.vy = 0; continue; }
+                const mySize = groupSize(s);
+                const enemySize = groupSize(nearestEnemy);
+                if (enemySize > mySize * 2) {
+                    s.state = 'fleeing';
+                    const dx = s.x - nearestEnemy.x, dy = s.y - nearestEnemy.y;
+                    const d = Math.sqrt(dx * dx + dy * dy) || 1;
+                    s.vx = (dx / d) * FLEE_SPEED; s.vy = (dy / d) * FLEE_SPEED;
+                    s.facing = s.vx >= 0 ? 1 : -1;
+                    continue;
+                }
+                if (nearDist > ATTACK_RANGE) {
+                    s.state = 'moving';
+                    const dx = nearestEnemy.x - s.x, dy = nearestEnemy.y - s.y;
+                    const d = Math.sqrt(dx * dx + dy * dy) || 1;
+                    s.vx = (dx / d) * SPEED; s.vy = (dy / d) * SPEED;
+                    s.facing = s.vx >= 0 ? 1 : -1;
+                } else {
+                    s.state = 'attacking'; s.target = nearestEnemy;
+                    s.vx = 0; s.vy = 0;
+                    s.facing = nearestEnemy.x >= s.x ? 1 : -1;
+                }
+            }
+            for (let i = 0; i < stickmen.length; i++) {
+                for (let j = i + 1; j < stickmen.length; j++) {
+                    const a = stickmen[i], b = stickmen[j];
+                    if (a.colour !== b.colour) continue;
+                    const dx = a.x - b.x, dy = a.y - b.y;
+                    const d = Math.sqrt(dx * dx + dy * dy) || 0.1;
+                    if (d < SEPARATION) {
+                        const push = (SEPARATION - d) * 0.3;
+                        const nx = dx / d, ny = dy / d;
+                        a.vx += nx * push; a.vy += ny * push;
+                        b.vx -= nx * push; b.vy -= ny * push;
+                    }
+                }
+            }
+            for (const s of stickmen) {
+                s.x += s.vx; s.y += s.vy;
+                s.x = Math.max(HEAD_R + 2, Math.min(canvas.width - HEAD_R - 2, s.x));
+                s.y = Math.max(UI_TOP_MARGIN + HEAD_R + 2, Math.min(canvas.height - LEG_H - 2, s.y));
+            }
+        }
+
+        // ─── COMBAT ──────────────────────────────────────────────────
+        function updateCombat(dt) {
+            for (const s of stickmen) {
+                s.attackCD = Math.max(0, s.attackCD - dt);
+                s.punchT = Math.max(0, s.punchT - dt);
+                if (s.state === 'attacking' && s.target && s.attackCD <= 0) {
+                    const t = s.target;
+                    if (t.hp > 0) { t.hp -= DAMAGE; s.attackCD = ATTACK_CD; s.punchT = 0.15; }
+                }
+            }
+            for (let i = stickmen.length - 1; i >= 0; i--) {
+                if (stickmen[i].hp <= 0) {
+                    const dead = stickmen.splice(i, 1)[0];
+                    dead.fadeT = DEATH_FADE_DUR;
+                    corpses.push(dead);
+                }
+            }
+            for (let i = corpses.length - 1; i >= 0; i--) {
+                corpses[i].fadeT -= dt;
+                if (corpses[i].fadeT <= 0) corpses.splice(i, 1);
+            }
+        }
+
+        // ─── RENDERING ───────────────────────────────────────────────
+        function drawStickman(s, alpha) {
+            const { x, y, colour, facing, punchT, hp, maxHp } = s;
+            const c = COLOURS[colour];
+            ctx.save();
+            ctx.globalAlpha = alpha;
+            ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+            const headY = y - BODY_H - HEAD_R;
+            const bodyBot = y;
+            const t = performance.now() / 200;
+            const legSway = (s.state === 'moving' || s.state === 'fleeing') ? Math.sin(t + s.id) * 5 : 0;
+            ctx.strokeStyle = c.stroke; ctx.lineWidth = 2.5;
+            ctx.beginPath(); ctx.moveTo(x, bodyBot); ctx.lineTo(x - 5 + legSway, bodyBot + LEG_H); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(x, bodyBot); ctx.lineTo(x + 5 - legSway, bodyBot + LEG_H); ctx.stroke();
+            ctx.strokeStyle = c.fill; ctx.lineWidth = 3;
+            ctx.beginPath(); ctx.moveTo(x, headY + HEAD_R); ctx.lineTo(x, bodyBot); ctx.stroke();
+            const shoulderY = headY + HEAD_R + 5;
+            if (punchT > 0) {
+                ctx.beginPath(); ctx.moveTo(x, shoulderY); ctx.lineTo(x + facing * ARM_LEN * 1.3, shoulderY - 2); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(x, shoulderY); ctx.lineTo(x - facing * ARM_LEN * 0.6, shoulderY + 6); ctx.stroke();
+            } else {
+                const armSway = (s.state === 'moving' || s.state === 'fleeing') ? Math.sin(t + s.id) * 4 : 0;
+                ctx.beginPath(); ctx.moveTo(x, shoulderY); ctx.lineTo(x - ARM_LEN * 0.6, shoulderY + 8 + armSway); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(x, shoulderY); ctx.lineTo(x + ARM_LEN * 0.6, shoulderY + 8 - armSway); ctx.stroke();
+            }
+            ctx.fillStyle = c.fill;
+            ctx.beginPath(); ctx.arc(x, headY, HEAD_R, 0, Math.PI * 2); ctx.fill();
+            ctx.strokeStyle = c.stroke; ctx.lineWidth = 1.5; ctx.stroke();
+            if (hp < maxHp) {
+                const hpRatio = Math.max(0, hp / maxHp);
+                const barX = x - HP_BAR_W / 2; const barY = headY - HEAD_R - 7;
+                ctx.fillStyle = '#444'; ctx.fillRect(barX, barY, HP_BAR_W, HP_BAR_H);
+                const r = Math.round(255 * (1 - hpRatio)), g = Math.round(255 * hpRatio);
+                ctx.fillStyle = `rgb(${r},${g},50)`;
+                ctx.fillRect(barX, barY, HP_BAR_W * hpRatio, HP_BAR_H);
+            }
+            ctx.restore();
+        }
+
+        function render() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#16213e'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = 'rgba(255,255,255,0.03)';
+            for (let gx = 0; gx < canvas.width; gx += 40) {
+                for (let gy = UI_TOP_MARGIN; gy < canvas.height; gy += 40) {
+                    ctx.fillRect(gx, gy, 2, 2);
+                }
+            }
+            for (const c of corpses) drawStickman(c, c.fadeT / DEATH_FADE_DUR * 0.6);
+            for (const s of stickmen) drawStickman(s, 1);
+        }
+
+        // ─── GAME LOOP ───────────────────────────────────────────────
+        let lastTime = performance.now();
+        let battleRunning = false;
+        let battleTimeElapsed = 0;
+
+        function gameLoop(now) {
+            const dt = Math.min((now - lastTime) / 1000, 0.05);
+            lastTime = now;
+            if (battleRunning) {
+                battleTimeElapsed += dt;
+                rebuildGroups();
+                updateAI(dt);
+                updateCombat(dt);
+                updateBattleHUD();
+                checkBattleEnd();
+            }
+            render();
+            requestAnimationFrame(gameLoop);
+        }
+        requestAnimationFrame(gameLoop);
+
+        // ═══════════════════════════════════════════════════════════════
+        // ─── MULTIPLAYER GAMBLING SYSTEM ─────────────────────────────
+        // ═══════════════════════════════════════════════════════════════
+
+        let partyCode = '';
+        let players = [];          // { name, balance, id }
+        let currentRound = 1;
+        let bets = {};             // playerId → { team, amount }
+        let armySizes = { red: 15, blue: 15, green: 15, yellow: 15 };
+        let broadcastChannel = null;
+        let isHost = false;
+
+        // ─── PARTY CODE GENERATION ───────────────────────────────────
+        function generatePartyCode() {
+            const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+            let code = '';
+            const arr = new Uint32Array(4);
+            crypto.getRandomValues(arr);
+            for (let i = 0; i < 4; i++) code += chars[arr[i] % chars.length];
+            return code;
+        }
+
+        function initParty() {
+            partyCode = generatePartyCode();
+            document.getElementById('my-party-code').textContent = partyCode;
+            isHost = true;
+            setupBroadcastChannel();
+        }
+
+        function setupBroadcastChannel() {
+            if (broadcastChannel) broadcastChannel.close();
+            broadcastChannel = new BroadcastChannel('stickman-bets-' + partyCode);
+            broadcastChannel.onmessage = handleBroadcast;
+        }
+
+        function handleBroadcast(e) {
+            const msg = e.data;
+            if (!msg || typeof msg.type !== 'string') return;
+
+            if (msg.type === 'join-request' && isHost) {
+                // A new player wants to join
+                const name = String(msg.name).slice(0, 20);
+                if (players.some(p => p.name === name)) return;
+                const bal = parseInt(document.getElementById('starting-balance').value, 10) || 1000;
+                addPlayer(name, bal);
+                // Broadcast full state to all
+                broadcastChannel.postMessage({
+                    type: 'state-sync',
+                    players: players,
+                    armySizes: armySizes,
+                    round: currentRound,
+                });
+            }
+
+            if (msg.type === 'state-sync' && !isHost) {
+                players = msg.players;
+                armySizes = msg.armySizes;
+                currentRound = msg.round;
+                renderPlayerList();
+            }
+
+            if (msg.type === 'start-betting' && !isHost) {
+                currentRound = msg.round;
+                armySizes = msg.armySizes;
+                players = msg.players;
+                showBettingPhase();
+            }
+
+            if (msg.type === 'battle-start' && !isHost) {
+                bets = msg.bets;
+                startBattle(msg.armySizes);
+            }
+
+            if (msg.type === 'results' && !isHost) {
+                players = msg.players;
+                showResults(msg.winner, msg.payouts);
+            }
+        }
+
+        // ─── PLAYER MANAGEMENT ───────────────────────────────────────
+        let nextPlayerId = 0;
+
+        function addPlayer(name, balance) {
+            if (!name.trim()) return;
+            players.push({ name: name.trim(), balance, id: nextPlayerId++ });
+            renderPlayerList();
+        }
+
+        function removePlayer(id) {
+            players = players.filter(p => p.id !== id);
+            renderPlayerList();
+        }
+
+        function renderPlayerList() {
+            const ul = document.getElementById('player-list');
+            ul.innerHTML = '';
+            players.forEach((p, i) => {
+                const li = document.createElement('li');
+                li.innerHTML = `
+          <span class="p-name">${escapeHtml(p.name)}${i === 0 ? '<span class="p-host">HOST</span>' : ''}</span>
+          <span class="p-balance">$${p.balance.toLocaleString()}</span>
+          ${players.length > 1 ? `<span class="p-remove" data-id="${p.id}">&times;</span>` : ''}
+        `;
+                ul.appendChild(li);
+            });
+            ul.querySelectorAll('.p-remove').forEach(el => {
+                el.addEventListener('click', () => removePlayer(parseInt(el.dataset.id, 10)));
+            });
+        }
+
+        function escapeHtml(str) {
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+
+        // ─── ODDS CALCULATION ────────────────────────────────────────
+        function calculateOdds() {
+            const total = armySizes.red + armySizes.blue + armySizes.green + armySizes.yellow;
+            const active = TEAM_NAMES.filter(t => armySizes[t] > 0);
+            const odds = {};
+            for (const t of TEAM_NAMES) {
+                if (armySizes[t] <= 0) {
+                    odds[t] = 0;
+                    continue;
+                }
+                // Odds inversely proportional to army size — smaller army = bigger payout
+                const proportion = armySizes[t] / total;
+                // Multiplier: ranges ~1.2x for dominant team to ~8x for underdog
+                const rawMultiplier = (1 / proportion) * (active.length > 1 ? 0.85 : 1);
+                odds[t] = Math.round(rawMultiplier * 10) / 10;
+            }
+            return odds;
+        }
+
+        // ─── BETTING PHASE ───────────────────────────────────────────
+        function showBettingPhase() {
+            document.getElementById('lobby-overlay').classList.add('hidden');
+            document.getElementById('results-overlay').classList.add('hidden');
+            document.getElementById('betting-overlay').classList.remove('hidden');
+            document.getElementById('battle-hud').classList.add('hidden');
+
+            document.getElementById('round-number').textContent = currentRound;
+
+            const odds = calculateOdds();
+            const activeTeams = TEAM_NAMES.filter(t => armySizes[t] > 0);
+
+            // Show army preview
+            const preview = activeTeams.map(t =>
+                `<span style="color:${COLOURS[t].fill}">${t.charAt(0).toUpperCase() + t.slice(1)}: ${armySizes[t]}</span>`
+            ).join(' &nbsp;vs&nbsp; ');
+            document.getElementById('army-preview').innerHTML = '⚔️ ' + preview;
+
+            bets = {};
+            const container = document.getElementById('bet-sections');
+            container.innerHTML = '';
+
+            for (const player of players) {
+                const section = document.createElement('div');
+                section.className = 'bet-section';
+                section.dataset.playerId = player.id;
+
+                let cardsHtml = '';
+                for (const t of activeTeams) {
+                    cardsHtml += `
+            <div class="team-bet-card" data-team="${t}" style="background:${COLOURS[t].fill}22;">
+              <div class="team-name" style="color:${COLOURS[t].fill}">${t.charAt(0).toUpperCase() + t.slice(1)}</div>
+              <div class="odds">${odds[t]}x</div>
+            </div>
+          `;
+                }
+
+                section.innerHTML = `
+          <div class="player-header">
+            <span class="name">${escapeHtml(player.name)}</span>
+            <span class="wallet">$${player.balance.toLocaleString()}</span>
+          </div>
+          <div class="team-bets" style="grid-template-columns: repeat(${activeTeams.length}, 1fr);">
+            ${cardsHtml}
+          </div>
+          <div class="bet-amount-row">
+            <button class="btn btn-outline quick-bet" data-pct="10">10%</button>
+            <button class="btn btn-outline quick-bet" data-pct="25">25%</button>
+            <button class="btn btn-outline quick-bet" data-pct="50">50%</button>
+            <button class="btn btn-outline quick-bet" data-pct="100">ALL IN</button>
+            <input type="number" class="bet-input" placeholder="$0" min="0" max="${player.balance}" value="0">
+          </div>
+        `;
+
+                container.appendChild(section);
+
+                // Wire up team card selection
+                const cards = section.querySelectorAll('.team-bet-card');
+                cards.forEach(card => {
+                    card.addEventListener('click', () => {
+                        cards.forEach(c => c.classList.remove('selected'));
+                        card.classList.add('selected');
+                    });
+                });
+
+                // Wire up quick bet buttons
+                const betInput = section.querySelector('.bet-input');
+                section.querySelectorAll('.quick-bet').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const pct = parseInt(btn.dataset.pct, 10);
+                        betInput.value = Math.floor(player.balance * pct / 100);
+                    });
+                });
+            }
+        }
+
+        function collectBets() {
+            const sections = document.querySelectorAll('.bet-section');
+            const odds = calculateOdds();
+            let valid = true;
+
+            for (const section of sections) {
+                const playerId = parseInt(section.dataset.playerId, 10);
+                const player = players.find(p => p.id === playerId);
+                const selectedCard = section.querySelector('.team-bet-card.selected');
+                const betInput = section.querySelector('.bet-input');
+                const amount = parseInt(betInput.value, 10) || 0;
+
+                if (!selectedCard || amount <= 0) {
+                    // Skip this player — no bet placed
+                    bets[playerId] = { team: null, amount: 0, odds: 0 };
+                    continue;
+                }
+
+                const team = selectedCard.dataset.team;
+
+                if (amount > player.balance) {
+                    betInput.style.borderColor = '#e74c3c';
+                    valid = false;
+                    continue;
+                }
+
+                bets[playerId] = { team, amount, odds: odds[team] };
+            }
+
+            return valid;
+        }
+
+        // ─── BATTLE ──────────────────────────────────────────────────
+        function startBattle(sizes) {
+            document.getElementById('betting-overlay').classList.add('hidden');
+            document.getElementById('battle-hud').classList.remove('hidden');
+            document.getElementById('commentary').classList.remove('hidden');
+
+            // Clear and spawn armies
+            stickmen.length = 0;
+            corpses.length = 0;
+            nextId = 0;
+
+            for (const t of TEAM_NAMES) {
+                const count = sizes[t] || 0;
+                for (let i = 0; i < count; i++) stickmen.push(createStickman(t));
+            }
+
+            battleTimeElapsed = 0;
+            battleRunning = true;
+            startCommentary();
+        }
+
+        function updateBattleHUD() {
+            const counts = { red: 0, blue: 0, green: 0, yellow: 0 };
+            for (const s of stickmen) counts[s.colour]++;
+            for (const t of TEAM_NAMES) {
+                document.getElementById('hud-' + t).textContent = counts[t];
+            }
+            const mins = Math.floor(battleTimeElapsed / 60);
+            const secs = Math.floor(battleTimeElapsed % 60);
+            document.getElementById('battle-timer').textContent =
+                `${mins}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        function checkBattleEnd() {
+            if (!battleRunning) return;
+            const alive = new Set(stickmen.map(s => s.colour));
+            if (alive.size <= 1) {
+                battleRunning = false;
+                const winner = alive.size === 1 ? [...alive][0] : null;
+                setTimeout(() => endBattle(winner), 800);
+            }
+        }
+
+        function endBattle(winner) {
+            document.getElementById('battle-hud').classList.add('hidden');
+            document.getElementById('commentary').classList.add('hidden');
+
+            // Calculate payouts
+            const payouts = [];
+            for (const player of players) {
+                const bet = bets[player.id];
+                if (!bet || !bet.team || bet.amount <= 0) {
+                    payouts.push({ playerId: player.id, name: player.name, team: null, amount: 0, payout: 0 });
+                    continue;
+                }
+
+                if (winner && bet.team === winner) {
+                    // Winner: get back bet + profit based on odds
+                    const profit = Math.floor(bet.amount * bet.odds) - bet.amount;
+                    player.balance += profit;
+                    payouts.push({ playerId: player.id, name: player.name, team: bet.team, amount: bet.amount, payout: profit });
+                } else {
+                    // Loser: lose bet amount
+                    player.balance -= bet.amount;
+                    if (player.balance < 0) player.balance = 0;
+                    payouts.push({ playerId: player.id, name: player.name, team: bet.team, amount: bet.amount, payout: -bet.amount });
+                }
+            }
+
+            if (isHost && broadcastChannel) {
+                broadcastChannel.postMessage({ type: 'results', winner, payouts, players });
+            }
+
+            showResults(winner, payouts);
+        }
+
+        function showResults(winner, payouts) {
+            document.getElementById('results-overlay').classList.remove('hidden');
+            document.getElementById('result-round').textContent = currentRound;
+
+            const banner = document.getElementById('winner-banner');
+            if (winner) {
+                banner.textContent = `🏆 ${winner.toUpperCase()} WINS!`;
+                banner.style.color = COLOURS[winner].fill;
+                spawnConfetti(COLOURS[winner].fill);
+            } else {
+                banner.textContent = '💀 DRAW!';
+                banner.style.color = '#888';
+            }
+
+            const survivorCount = stickmen.filter(s => s.colour === winner).length;
+            document.getElementById('winner-sub').textContent = winner
+                ? `${survivorCount} survivor${survivorCount !== 1 ? 's' : ''} standing after ${formatTime(battleTimeElapsed)}`
+                : 'Everyone wiped each other out!';
+
+            // Payout table
+            const tbody = document.getElementById('payout-body');
+            tbody.innerHTML = '';
+            for (const p of payouts) {
+                const player = players.find(pl => pl.id === p.playerId);
+                const teamLabel = p.team
+                    ? `<span style="color:${COLOURS[p.team].fill}">${p.team.charAt(0).toUpperCase() + p.team.slice(1)}</span> ($${p.amount.toLocaleString()})`
+                    : '<span style="color:#666">No bet</span>';
+                const payoutClass = p.payout > 0 ? 'positive' : p.payout < 0 ? 'negative' : 'zero';
+                const payoutLabel = p.payout > 0 ? `+$${p.payout.toLocaleString()}` : p.payout < 0 ? `-$${Math.abs(p.payout).toLocaleString()}` : '—';
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+          <td>${escapeHtml(p.name)}</td>
+          <td>${teamLabel}</td>
+          <td class="${payoutClass}">${payoutLabel}</td>
+          <td>$${player ? player.balance.toLocaleString() : '?'}</td>
+        `;
+                tbody.appendChild(tr);
+            }
+
+            // Scoreboard
+            const board = document.getElementById('scoreboard');
+            board.innerHTML = '';
+            const sorted = [...players].sort((a, b) => b.balance - a.balance);
+            sorted.forEach((p, i) => {
+                const medals = ['🥇', '🥈', '🥉'];
+                const rank = i < 3 ? medals[i] : `${i + 1}.`;
+                const row = document.createElement('div');
+                row.className = 'scoreboard-row';
+                const balColor = p.balance > 0 ? '#2ecc71' : '#e74c3c';
+                row.innerHTML = `
+          <span class="rank">${rank}</span>
+          <span class="s-name">${escapeHtml(p.name)}</span>
+          <span class="s-balance" style="color:${balColor}">$${p.balance.toLocaleString()}</span>
+        `;
+                board.appendChild(row);
+            });
+        }
+
+        // ─── COMMENTARY SYSTEM ───────────────────────────────────────
+        const commentaryEl = document.getElementById('commentary');
+        let commentaryInterval = null;
+
+        const COMMENTARY_LINES = [
+            () => {
+                const counts = {};
+                for (const t of TEAM_NAMES) counts[t] = stickmen.filter(s => s.colour === t).length;
+                const leading = TEAM_NAMES.filter(t => counts[t] > 0).sort((a, b) => counts[b] - counts[a])[0];
+                return leading ? `${leading.charAt(0).toUpperCase() + leading.slice(1)} is looking strong with ${counts[leading]} fighters!` : '';
+            },
+            () => {
+                const alive = TEAM_NAMES.filter(t => stickmen.some(s => s.colour === t));
+                return alive.length === 2 ? `It's down to ${alive[0]} vs ${alive[1]}! 🔥` : '';
+            },
+            () => {
+                const total = stickmen.length;
+                return total < 10 && total > 0 ? `Only ${total} fighter${total > 1 ? 's' : ''} remain! This is intense!` : '';
+            },
+            () => {
+                const fleeing = stickmen.filter(s => s.state === 'fleeing').length;
+                return fleeing > 5 ? `${fleeing} fighters are running for their lives! 😱` : '';
+            },
+            () => {
+                const fighting = stickmen.filter(s => s.state === 'attacking').length;
+                return fighting > 10 ? `Massive brawl! ${fighting} stickmen locked in combat! 💥` : '';
+            },
+            () => {
+                const elim = TEAM_NAMES.filter(t => !stickmen.some(s => s.colour === t) && (armySizes[t] || 0) > 0);
+                return elim.length > 0 ? `${elim.map(t => t.charAt(0).toUpperCase() + t.slice(1)).join(' and ')} ha${elim.length > 1 ? 've' : 's'} been eliminated! ☠️` : '';
+            },
+        ];
+
+        function startCommentary() {
+            if (commentaryInterval) clearInterval(commentaryInterval);
+            showCommentary("Let the battle begin! ⚔️");
+            commentaryInterval = setInterval(() => {
+                if (!battleRunning) { clearInterval(commentaryInterval); return; }
+                // Pick a random commentary that returns non-empty
+                const shuffled = COMMENTARY_LINES.sort(() => Math.random() - 0.5);
+                for (const fn of shuffled) {
+                    const line = fn();
+                    if (line) { showCommentary(line); break; }
+                }
+            }, 3500);
+        }
+
+        function showCommentary(text) {
+            commentaryEl.textContent = text;
+            commentaryEl.classList.remove('hidden');
+        }
+
+        // ─── CONFETTI ────────────────────────────────────────────────
+        function spawnConfetti(colour) {
+            for (let i = 0; i < 60; i++) {
+                const piece = document.createElement('div');
+                piece.className = 'confetti-piece';
+                const hue = Math.random() * 40 - 20;
+                piece.style.background = colour;
+                piece.style.left = Math.random() * 100 + 'vw';
+                piece.style.top = -20 + 'px';
+                piece.style.animationDelay = Math.random() * 1.5 + 's';
+                piece.style.animationDuration = 2 + Math.random() * 2 + 's';
+                piece.style.width = 6 + Math.random() * 8 + 'px';
+                piece.style.height = 6 + Math.random() * 10 + 'px';
+                piece.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
+                piece.style.opacity = 0.7 + Math.random() * 0.3;
+                document.body.appendChild(piece);
+                setTimeout(() => piece.remove(), 4500);
+            }
+        }
+
+        // ─── UTILITY ─────────────────────────────────────────────────
+        function formatTime(sec) {
+            const m = Math.floor(sec / 60);
+            const s = Math.floor(sec % 60);
+            return m > 0 ? `${m}m ${s}s` : `${s}s`;
+        }
+
+        function showToast(msg) {
+            const t = document.createElement('div');
+            t.className = 'toast';
+            t.textContent = msg;
+            document.body.appendChild(t);
+            setTimeout(() => t.remove(), 2200);
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // ─── EVENT WIRING ────────────────────────────────────────────
+        // ═══════════════════════════════════════════════════════════════
+
+        // Tab switching
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                document.getElementById('tab-create').style.display = btn.dataset.tab === 'create' ? '' : 'none';
+                document.getElementById('tab-join').style.display = btn.dataset.tab === 'join' ? '' : 'none';
+            });
+        });
+
+        // Add player
+        document.getElementById('add-player-btn').addEventListener('click', () => {
+            const input = document.getElementById('player-name-input');
+            const name = input.value.trim();
+            if (!name) return;
+            if (players.some(p => p.name === name)) { showToast('Name already taken!'); return; }
+            const bal = parseInt(document.getElementById('starting-balance').value, 10) || 1000;
+            addPlayer(name, bal);
+            input.value = '';
+            input.focus();
+        });
+
+        document.getElementById('player-name-input').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') document.getElementById('add-player-btn').click();
+        });
+
+        // Copy party code
+        document.getElementById('copy-code-btn').addEventListener('click', () => {
+            navigator.clipboard.writeText(partyCode).then(() => showToast('Party code copied!'));
+        });
+
+        // Join party
+        document.getElementById('join-party-btn').addEventListener('click', () => {
+            const code = document.getElementById('join-code-input').value.trim().toUpperCase();
+            if (code.length !== 4) { showToast('Enter a 4-letter code'); return; }
+            partyCode = code;
+            isHost = false;
+            setupBroadcastChannel();
+            const name = prompt('Enter your name:');
+            if (!name) return;
+            broadcastChannel.postMessage({ type: 'join-request', name: name.trim().slice(0, 20) });
+            showToast('Joining party ' + code + '...');
+            // Wait for state sync
+            document.getElementById('lobby-overlay').querySelector('.panel h1').textContent = 'Waiting for host...';
+        });
+
+        // Start betting
+        document.getElementById('start-betting-btn').addEventListener('click', () => {
+            if (players.length < 1) { showToast('Add at least 1 player!'); return; }
+
+            // Read army sizes
+            armySizes = {
+                red: Math.max(0, Math.min(100, parseInt(document.getElementById('army-red').value, 10) || 0)),
+                blue: Math.max(0, Math.min(100, parseInt(document.getElementById('army-blue').value, 10) || 0)),
+                green: Math.max(0, Math.min(100, parseInt(document.getElementById('army-green').value, 10) || 0)),
+                yellow: Math.max(0, Math.min(100, parseInt(document.getElementById('army-yellow').value, 10) || 0)),
+            };
+
+            const totalArmy = armySizes.red + armySizes.blue + armySizes.green + armySizes.yellow;
+            if (totalArmy < 2) { showToast('Need at least 2 teams with fighters!'); return; }
+
+            const activeTeams = TEAM_NAMES.filter(t => armySizes[t] > 0);
+            if (activeTeams.length < 2) { showToast('Need at least 2 active teams!'); return; }
+
+            if (broadcastChannel) {
+                broadcastChannel.postMessage({
+                    type: 'start-betting',
+                    round: currentRound,
+                    armySizes,
+                    players,
+                });
+            }
+
+            showBettingPhase();
+        });
+
+        // Lock bets & fight
+        document.getElementById('lock-bets-btn').addEventListener('click', () => {
+            if (!collectBets()) { showToast('Check your bet amounts!'); return; }
+
+            // Ensure at least one bet
+            const anyBet = Object.values(bets).some(b => b.team && b.amount > 0);
+            if (!anyBet) { showToast('At least one player must place a bet!'); return; }
+
+            if (broadcastChannel) {
+                broadcastChannel.postMessage({ type: 'battle-start', bets, armySizes });
+            }
+
+            startBattle(armySizes);
+        });
+
+        // Skip battle
+        document.getElementById('skip-btn').addEventListener('click', () => {
+            if (!battleRunning) return;
+            // Run simulation to completion in fast mode
+            let safetyCounter = 0;
+            while (battleRunning && safetyCounter < 200000) {
+                rebuildGroups();
+                updateAI(0.05);
+                updateCombat(0.05);
+                battleTimeElapsed += 0.05;
+                const alive = new Set(stickmen.map(s => s.colour));
+                if (alive.size <= 1) {
+                    battleRunning = false;
+                    const winner = alive.size === 1 ? [...alive][0] : null;
+                    endBattle(winner);
+                    return;
+                }
+                safetyCounter++;
+            }
+            // If we hit safety limit, force end
+            if (battleRunning) {
+                battleRunning = false;
+                const alive = new Set(stickmen.map(s => s.colour));
+                const winner = alive.size === 1 ? [...alive][0] : null;
+                endBattle(winner);
+            }
+        });
+
+        // Next round
+        document.getElementById('next-round-btn').addEventListener('click', () => {
+            currentRound++;
+            // Remove bankrupt players
+            const bankrupt = players.filter(p => p.balance <= 0);
+            if (bankrupt.length > 0) {
+                showToast(`${bankrupt.map(p => p.name).join(', ')} went broke! 💸`);
+                players = players.filter(p => p.balance > 0);
+            }
+            if (players.length < 1) {
+                showToast('Everyone is broke! Game over!');
+                backToLobby();
+                return;
+            }
+            showBettingPhase();
+        });
+
+        // Back to lobby
+        document.getElementById('back-lobby-btn').addEventListener('click', backToLobby);
+
+        function backToLobby() {
+            document.getElementById('results-overlay').classList.add('hidden');
+            document.getElementById('betting-overlay').classList.add('hidden');
+            document.getElementById('battle-hud').classList.add('hidden');
+            document.getElementById('commentary').classList.add('hidden');
+            document.getElementById('lobby-overlay').classList.remove('hidden');
+            document.getElementById('lobby-overlay').querySelector('.panel h1').textContent = 'STICKMAN BATTLE BETS';
+
+            battleRunning = false;
+            stickmen.length = 0;
+            corpses.length = 0;
+            currentRound = 1;
+            bets = {};
+            renderPlayerList();
+        }
+
+        // ─── INIT ────────────────────────────────────────────────────
+        initParty();
+    </script>
+</body>
+
+</html>
