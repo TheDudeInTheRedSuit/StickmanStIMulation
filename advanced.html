@@ -955,7 +955,7 @@
     }
 
     // A* with a budget cap for performance — returns FULL path as [{x,y}, ...]
-    const A_STAR_BUDGET = 2000; // max nodes explored per query
+    const A_STAR_BUDGET = 9000; // max nodes explored per query
     function astarPath(sx, sy, ex, ey) {
       if (!navGrid) return [{ x: ex, y: ey }];
       const sgx = Math.floor(sx / NAV_CELL), sgy = Math.floor(sy / NAV_CELL);
@@ -1201,11 +1201,13 @@
             // Stagger: only recalc every PF_INTERVAL frames per stickman
             const needRecalc = (pfFrameCounter + s.id) % PF_INTERVAL === 0
               || !s._path || s._path.length === 0
-              || s._pathTargetId !== chosenEnemy.id;
+              || s._pathTargetId !== chosenEnemy.id
+              || (s._pathTargetPos && Math.hypot(s._pathTargetPos.x - chosenEnemy.x, s._pathTargetPos.y - chosenEnemy.y) > 50);
             if (needRecalc) {
               const path = astarPath(s.x, s.y, chosenEnemy.x, chosenEnemy.y);
               s._path = path; // full waypoint array or null
               s._pathTargetId = chosenEnemy.id;
+              s._pathTargetPos = { x: chosenEnemy.x, y: chosenEnemy.y };
             }
             // Follow first waypoint; pop when close enough
             if (s._path && s._path.length > 0) {
@@ -1225,10 +1227,12 @@
           let moveX = (dx / d) * SPEED;
           let moveY = (dy / d) * SPEED;
 
-          // Obstacle steering still useful as a safety net
-          const steer = getObstacleSteering(s, goalX, goalY, SPEED);
-          moveX += steer.steerX;
-          moveY += steer.steerY;
+          // Obstacle steering as fallback when A* is not guiding (they conflict if combined)
+          if (!smartPathfinding || !s._path || s._path.length === 0) {
+            const steer = getObstacleSteering(s, goalX, goalY, SPEED);
+            moveX += steer.steerX;
+            moveY += steer.steerY;
+          }
 
           // Renormalize to SPEED
           const moveLen = Math.sqrt(moveX * moveX + moveY * moveY) || 1;
