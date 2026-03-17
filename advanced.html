@@ -955,9 +955,9 @@
     }
 
     // A* with a budget cap for performance — returns FULL path as [{x,y}, ...]
-    const A_STAR_BUDGET = 800; // max nodes explored per query
+    const A_STAR_BUDGET = 2000; // max nodes explored per query
     function astarPath(sx, sy, ex, ey) {
-      if (!navGrid) return null;
+      if (!navGrid) return [{ x: ex, y: ey }];
       const sgx = Math.floor(sx / NAV_CELL), sgy = Math.floor(sy / NAV_CELL);
       const egx = Math.floor(ex / NAV_CELL), egy = Math.floor(ey / NAV_CELL);
       if (sgx < 0 || sgy < 0 || sgx >= navW || sgy >= navH) return null;
@@ -980,7 +980,7 @@
       }
       const startKey = sgy * navW + sgx;
       const endKey = destY * navW + destX;
-      if (startKey === endKey) return null; // already there
+      if (startKey === endKey) return [{ x: ex, y: ey }]; // already in same cell — direct path
 
       // Costs: wall=impassable, hazard=high cost, water=moderate cost, open=1
       const COST = [1, Infinity, 25, 3]; // indexed by navGrid value
@@ -1075,7 +1075,7 @@
           }
         }
       }
-      return null; // no path found within budget
+      return [{ x: ex, y: ey }]; // fallback: direct line if no path found within budget
     }
 
     // Stagger pathfinding across frames to avoid spikes
@@ -1148,7 +1148,7 @@
     function updateAI(dt) {
       pfFrameCounter++;
       // Rebuild nav grid if dirty and pathfinding is on
-      if (smartPathfinding && navDirty) rebuildNavGrid();
+      if (smartPathfinding && (navDirty || !navGrid)) rebuildNavGrid();
 
       const curAttackRange = shapeMode === 'circles' ? circleRadius * 2 + 2 : ATTACK_RANGE;
       for (const s of stickmen) {
@@ -1196,8 +1196,8 @@
 
           let goalX = chosenEnemy.x, goalY = chosenEnemy.y;
 
-          // A* pathfinding: compute full path if enabled and obstacles exist
-          if (smartPathfinding && mapElements.length > 0) {
+          // A* pathfinding: compute full path if enabled
+          if (smartPathfinding) {
             // Stagger: only recalc every PF_INTERVAL frames per stickman
             const needRecalc = (pfFrameCounter + s.id) % PF_INTERVAL === 0
               || !s._path || s._path.length === 0
