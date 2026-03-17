@@ -764,7 +764,7 @@
     const ARM_LEN = 12;
     const HP_BAR_W = 20;
     const HP_BAR_H = 3;
-    const UI_TOP_MARGIN = 52;
+    let UI_TOP_MARGIN = 52;
     const DEATH_FADE_DUR = 0.35;  // seconds
     const HAZARD_DPS = 60;         // damage per second from hazard zones
     const WATER_SPEED_MULT = 0.4;  // speed multiplier inside water
@@ -826,9 +826,11 @@
     const canvas = document.getElementById('arena');
     const ctx = canvas.getContext('2d');
 
+    const uiBar = document.getElementById('ui');
     function resize() {
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
+      UI_TOP_MARGIN = uiBar.offsetHeight + 4;
     }
     window.addEventListener('resize', resize);
     resize();
