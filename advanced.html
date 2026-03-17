@@ -164,19 +164,7 @@
 
     /* ── Settings overlay & panel ──────────────────────────── */
     #settings-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(0, 0, 0, 0.5);
-      z-index: 20;
       display: none;
-      backdrop-filter: blur(2px);
-    }
-
-    #settings-overlay.open {
-      display: block;
     }
 
     #settings-panel {
@@ -192,6 +180,7 @@
       overflow-y: auto;
       transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      pointer-events: auto;
     }
 
     #settings-panel.open {
@@ -382,24 +371,38 @@
       display: block;
     }
 
-    .place-options select {
-      width: 100%;
-      padding: 8px 12px;
-      border-radius: 8px;
-      background: rgba(255, 255, 255, 0.06);
-      color: #fff;
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      font-size: 13px;
-      cursor: pointer;
-    }
-
     .place-options label {
       display: block;
       color: #888;
       font-size: 11px;
       text-transform: uppercase;
       letter-spacing: 1px;
-      margin-bottom: 6px;
+      margin-bottom: 8px;
+    }
+
+    .colour-swatches {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .colour-swatch {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      border: 3px solid transparent;
+      cursor: pointer;
+      transition: transform .1s, border-color .15s, box-shadow .15s;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+    }
+
+    .colour-swatch:hover {
+      transform: scale(1.15);
+    }
+
+    .colour-swatch.active {
+      border-color: #fff;
+      box-shadow: 0 0 8px rgba(255, 255, 255, 0.4), 0 1px 4px rgba(0, 0, 0, 0.3);
     }
 
     /* ── Background settings ────────────────────────────────── */
@@ -611,12 +614,12 @@
       </div>
       <div class="place-options" id="place-options">
         <label>Team to place</label>
-        <select id="place-colour">
-          <option value="red">Red</option>
-          <option value="blue">Blue</option>
-          <option value="green">Green</option>
-          <option value="yellow">Yellow</option>
-        </select>
+        <div class="colour-swatches" id="place-swatches">
+          <div class="colour-swatch active" data-colour="red" style="background:#e74c3c"></div>
+          <div class="colour-swatch" data-colour="blue" style="background:#3498db"></div>
+          <div class="colour-swatch" data-colour="green" style="background:#2ecc71"></div>
+          <div class="colour-swatch" data-colour="yellow" style="background:#f1c40f"></div>
+        </div>
       </div>
       <div class="toggle-row">
         <div>
@@ -894,51 +897,135 @@
       return groups[s.groupId] ? groups[s.groupId].size : 1;
     }
 
+    // ─── Line-of-sight & obstacle helpers ─────────────────────────────────
+    function lineHitsRect(x1, y1, x2, y2, rx, ry, rw, rh) {
+      // Check if line segment (x1,y1)→(x2,y2) intersects rect
+      const dx = x2 - x1, dy = y2 - y1;
+      let tmin = 0, tmax = 1;
+      if (dx !== 0) {
+        let t1 = (rx - x1) / dx, t2 = (rx + rw - x1) / dx;
+        if (t1 > t2) { const tmp = t1; t1 = t2; t2 = tmp; }
+        tmin = Math.max(tmin, t1); tmax = Math.min(tmax, t2);
+        if (tmin > tmax) return false;
+      } else if (x1 < rx || x1 > rx + rw) return false;
+      if (dy !== 0) {
+        let t1 = (ry - y1) / dy, t2 = (ry + rh - y1) / dy;
+        if (t1 > t2) { const tmp = t1; t1 = t2; t2 = tmp; }
+        tmin = Math.max(tmin, t1); tmax = Math.min(tmax, t2);
+        if (tmin > tmax) return false;
+      } else if (y1 < ry || y1 > ry + rh) return false;
+      return true;
+    }
+
+    function wallBetween(x1, y1, x2, y2) {
+      for (const el of mapElements) {
+        if (el.type !== 'wall') continue;
+        if (lineHitsRect(x1, y1, x2, y2, el.x, el.y, el.w, el.h)) return true;
+      }
+      return false;
+    }
+
+    function pointInRect(px, py, rx, ry, rw, rh) {
+      return px >= rx && px <= rx + rw && py >= ry && py <= ry + rh;
+    }
+
+    // Compute wall/hazard steering: perpendicular nudge to slide around obstacles
+    function getObstacleSteering(s, targetX, targetY, speed) {
+      let steerX = 0, steerY = 0;
+      const dx = targetX - s.x, dy = targetY - s.y;
+      const d = Math.sqrt(dx * dx + dy * dy) || 1;
+      const dirX = dx / d, dirY = dy / d;
+      // Perpendicular directions
+      const perpX = -dirY, perpY = dirX;
+
+      const LOOK_AHEAD = 40;
+      const aheadX = s.x + dirX * LOOK_AHEAD;
+      const aheadY = s.y + dirY * LOOK_AHEAD;
+
+      for (const el of mapElements) {
+        if (el.type !== 'wall' && el.type !== 'hazard') continue;
+        const pad = el.type === 'hazard' ? 20 : 4;
+        const rx = el.x - pad, ry = el.y - pad, rw = el.w + pad * 2, rh = el.h + pad * 2;
+        if (!lineHitsRect(s.x, s.y, aheadX, aheadY, rx, ry, rw, rh)) continue;
+
+        // Determine which perpendicular side has more space
+        const cx = el.x + el.w / 2, cy = el.y + el.h / 2;
+        const toCenter = (s.x - cx) * perpX + (s.y - cy) * perpY;
+        const sign = toCenter >= 0 ? 1 : -1;
+        const strength = el.type === 'hazard' ? 1.8 : 1.4;
+        steerX += perpX * sign * speed * strength;
+        steerY += perpY * sign * speed * strength;
+      }
+      return { steerX, steerY };
+    }
+
     // ─── AI & movement ──────────────────────────────────────────────────
     function updateAI(dt) {
       const curAttackRange = shapeMode === 'circles' ? circleRadius * 2 + 2 : ATTACK_RANGE;
       for (const s of stickmen) {
-        // Find nearest enemy
+        // Find nearest enemy — prefer reachable ones (no wall between)
         let nearestEnemy = null, nearDist = Infinity;
+        let nearestReachable = null, nearReachDist = Infinity;
         for (const o of stickmen) {
           if (o.colour === s.colour) continue;
           const dx = o.x - s.x, dy = o.y - s.y;
           const d = Math.sqrt(dx * dx + dy * dy);
           if (d < nearDist) { nearDist = d; nearestEnemy = o; }
+          if (d < nearReachDist && !wallBetween(s.x, s.y, o.x, o.y)) {
+            nearReachDist = d; nearestReachable = o;
+          }
         }
 
-        if (!nearestEnemy) {
+        // Prefer reachable enemy if one exists within 3× the nearest distance
+        const chosenEnemy = (nearestReachable && nearReachDist < nearDist * 3) ? nearestReachable : nearestEnemy;
+        const chosenDist = (chosenEnemy === nearestReachable) ? nearReachDist : nearDist;
+
+        if (!chosenEnemy) {
           s.state = 'idle'; s.vx = 0; s.vy = 0;
           continue;
         }
 
         // Flee check: enemy group > 2× own group
         const mySize = groupSize(s);
-        const enemySize = groupSize(nearestEnemy);
+        const enemySize = groupSize(chosenEnemy);
         if (enemySize > mySize * 2) {
           s.state = 'fleeing';
-          const dx = s.x - nearestEnemy.x, dy = s.y - nearestEnemy.y;
+          const dx = s.x - chosenEnemy.x, dy = s.y - chosenEnemy.y;
           const d = Math.sqrt(dx * dx + dy * dy) || 1;
           s.vx = (dx / d) * FLEE_SPEED;
           s.vy = (dy / d) * FLEE_SPEED;
+          // Flee also steers around obstacles
+          const steer = getObstacleSteering(s, s.x + s.vx * 20, s.y + s.vy * 20, FLEE_SPEED);
+          s.vx += steer.steerX * 0.5;
+          s.vy += steer.steerY * 0.5;
           s.facing = s.vx >= 0 ? 1 : -1;
           continue;
         }
 
-        // Move toward nearest enemy
-        if (nearDist > curAttackRange) {
+        // Move toward chosen enemy
+        if (chosenDist > curAttackRange) {
           s.state = 'moving';
-          const dx = nearestEnemy.x - s.x, dy = nearestEnemy.y - s.y;
+          const dx = chosenEnemy.x - s.x, dy = chosenEnemy.y - s.y;
           const d = Math.sqrt(dx * dx + dy * dy) || 1;
-          s.vx = (dx / d) * SPEED;
-          s.vy = (dy / d) * SPEED;
+          let moveX = (dx / d) * SPEED;
+          let moveY = (dy / d) * SPEED;
+
+          // Obstacle steering — steer around walls and hazards
+          const steer = getObstacleSteering(s, chosenEnemy.x, chosenEnemy.y, SPEED);
+          moveX += steer.steerX;
+          moveY += steer.steerY;
+
+          // Renormalize to SPEED
+          const moveLen = Math.sqrt(moveX * moveX + moveY * moveY) || 1;
+          s.vx = (moveX / moveLen) * SPEED;
+          s.vy = (moveY / moveLen) * SPEED;
           s.facing = s.vx >= 0 ? 1 : -1;
         } else {
           // In attack range
           s.state = 'attacking';
-          s.target = nearestEnemy;
+          s.target = chosenEnemy;
           s.vx = 0; s.vy = 0;
-          s.facing = nearestEnemy.x >= s.x ? 1 : -1;
+          s.facing = chosenEnemy.x >= s.x ? 1 : -1;
         }
       }
 
@@ -955,6 +1042,23 @@
             a.vx += nx * push; a.vy += ny * push;
             b.vx -= nx * push; b.vy -= ny * push;
           }
+        }
+      }
+
+      // Hazard repulsion — push stickmen away from nearby hazard edges
+      for (const s of stickmen) {
+        for (const el of mapElements) {
+          if (el.type !== 'hazard') continue;
+          const hpad = 25;
+          const hx = el.x - hpad, hy = el.y - hpad;
+          const hw = el.w + hpad * 2, hh = el.h + hpad * 2;
+          if (s.x < hx || s.x > hx + hw || s.y < hy || s.y > hy + hh) continue;
+          // Inside the expanded zone — push away from hazard center
+          const cx = el.x + el.w / 2, cy = el.y + el.h / 2;
+          const dx = s.x - cx, dy = s.y - cy;
+          const d = Math.sqrt(dx * dx + dy * dy) || 1;
+          s.vx += (dx / d) * 1.2;
+          s.vy += (dy / d) * 1.2;
         }
       }
 
@@ -1328,9 +1432,18 @@
 
     // ─── Place mode ──────────────────────────────────────────────────────
     let placeMode = false;
+    let placeColour = 'red';
     const togglePlace = document.getElementById('toggle-place');
     const placeOptions = document.getElementById('place-options');
-    const placeColourSelect = document.getElementById('place-colour');
+
+    // Colour swatch selection
+    document.querySelectorAll('#place-swatches .colour-swatch').forEach(sw => {
+      sw.addEventListener('click', () => {
+        document.querySelectorAll('#place-swatches .colour-swatch').forEach(s => s.classList.remove('active'));
+        sw.classList.add('active');
+        placeColour = sw.dataset.colour;
+      });
+    });
 
     togglePlace.addEventListener('change', () => {
       placeMode = togglePlace.checked;
@@ -1351,10 +1464,9 @@
       const rect = canvas.getBoundingClientRect();
       const x = (e.clientX - rect.left) * (canvas.width / rect.width);
       const y = (e.clientY - rect.top) * (canvas.height / rect.height);
-      const colour = placeColourSelect.value;
       const n = getSpawnCount();
       const spread = Math.min(40, n * 4);
-      for (let i = 0; i < n; i++) stickmen.push(createStickmanAt(colour, x, y, spread));
+      for (let i = 0; i < n; i++) stickmen.push(createStickmanAt(placeColour, x, y, spread));
     });
 
     // ─── Map maker canvas interaction ────────────────────────────────────
@@ -1428,15 +1540,16 @@
     // ─── Settings panel ──────────────────────────────────────────────────
     const settingsBtn = document.getElementById('settings-btn');
     const settingsPanel = document.getElementById('settings-panel');
-    const settingsOverlay = document.getElementById('settings-overlay');
     const settingsClose = document.getElementById('settings-close');
 
-    function openSettings() { settingsPanel.classList.add('open'); settingsOverlay.classList.add('open'); }
-    function closeSettings() { settingsPanel.classList.remove('open'); settingsOverlay.classList.remove('open'); }
+    function toggleSettings() {
+      const isOpen = settingsPanel.classList.toggle('open');
+      settingsBtn.classList.toggle('active', isOpen);
+    }
+    function closeSettings() { settingsPanel.classList.remove('open'); settingsBtn.classList.remove('active'); }
 
-    settingsBtn.addEventListener('click', openSettings);
+    settingsBtn.addEventListener('click', toggleSettings);
     settingsClose.addEventListener('click', closeSettings);
-    settingsOverlay.addEventListener('click', closeSettings);
 
     // ─── Map Maker settings wiring ───────────────────────────────────────
     const toggleMapMaker = document.getElementById('toggle-mapmaker');
@@ -1509,6 +1622,9 @@
           btn.style.boxShadow = `0 0 10px ${hex}88`;
           btn.style.color = isLightColour(hex) ? '#333' : '#fff';
         }
+        // Update place-mode swatch
+        const sw = document.querySelector(`.colour-swatch[data-colour="${col}"]`);
+        if (sw) sw.style.background = hex;
       });
     }
 
