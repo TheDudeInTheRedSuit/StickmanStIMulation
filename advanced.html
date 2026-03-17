@@ -1,0 +1,1175 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Stickman Team Battle Simulator</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      overflow: hidden;
+      background: #1a1a2e;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    canvas {
+      display: block;
+    }
+
+    /* ── Toolbar ────────────────────────────────────────────── */
+    #ui {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 8px 16px;
+      background: rgba(15, 15, 25, 0.85);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      z-index: 10;
+      flex-wrap: wrap;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .spawn-btn {
+      border: none;
+      border-radius: 8px;
+      padding: 6px 14px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      color: #fff;
+      transition: transform .1s, box-shadow .15s;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+    }
+
+    .spawn-btn:hover {
+      transform: scale(1.06);
+    }
+
+    .spawn-btn:active {
+      transform: scale(0.95);
+    }
+
+    .spawn-btn.red {
+      background: #e74c3c;
+      box-shadow: 0 0 8px #e74c3c66;
+    }
+
+    .spawn-btn.blue {
+      background: #3498db;
+      box-shadow: 0 0 8px #3498db66;
+    }
+
+    .spawn-btn.green {
+      background: #2ecc71;
+      box-shadow: 0 0 8px #2ecc7166;
+    }
+
+    .spawn-btn.yellow {
+      background: #f1c40f;
+      color: #333;
+      box-shadow: 0 0 8px #f1c40f66;
+    }
+
+    .counter {
+      color: #888;
+      font-size: 12px;
+      min-width: 20px;
+      text-align: center;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .toolbar-sep {
+      width: 1px;
+      height: 20px;
+      background: rgba(255, 255, 255, 0.1);
+      margin: 0 4px;
+    }
+
+    #spawn-count {
+      width: 44px;
+      padding: 5px 6px;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.08);
+      color: #fff;
+      font-size: 13px;
+      text-align: center;
+      font-variant-numeric: tabular-nums;
+    }
+
+    #spawn-count:focus {
+      outline: none;
+      border-color: rgba(255, 255, 255, 0.3);
+    }
+
+    .ui-label {
+      color: #666;
+      font-size: 12px;
+    }
+
+    .toolbar-btn {
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 8px;
+      padding: 6px 14px;
+      font-size: 13px;
+      cursor: pointer;
+      color: #aaa;
+      background: rgba(255, 255, 255, 0.04);
+      transition: all .15s;
+      white-space: nowrap;
+    }
+
+    .toolbar-btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: #ddd;
+    }
+
+    .toolbar-btn.active {
+      background: rgba(255, 165, 0, 0.2);
+      border-color: rgba(255, 165, 0, 0.4);
+      color: #fff;
+    }
+
+    #spawn-all-btn {
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 8px;
+      padding: 6px 14px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      color: #fff;
+      background: linear-gradient(135deg, #e74c3c44, #3498db44, #2ecc7144, #f1c40f44);
+      transition: transform .1s;
+    }
+
+    #spawn-all-btn:hover {
+      transform: scale(1.06);
+    }
+
+    #spawn-all-btn:active {
+      transform: scale(0.95);
+    }
+
+    /* ── Settings overlay & panel ──────────────────────────── */
+    #settings-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 20;
+      display: none;
+      backdrop-filter: blur(2px);
+    }
+
+    #settings-overlay.open {
+      display: block;
+    }
+
+    #settings-panel {
+      position: fixed;
+      top: 0;
+      right: -380px;
+      bottom: 0;
+      width: 360px;
+      background: #16162a;
+      border-left: 1px solid rgba(255, 255, 255, 0.06);
+      z-index: 30;
+      padding: 24px;
+      overflow-y: auto;
+      transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    #settings-panel.open {
+      right: 0;
+    }
+
+    #settings-panel h2 {
+      color: #fff;
+      font-size: 20px;
+      font-weight: 600;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    #settings-close {
+      background: rgba(255, 255, 255, 0.06);
+      border: none;
+      color: #888;
+      font-size: 18px;
+      cursor: pointer;
+      padding: 4px 10px;
+      border-radius: 8px;
+      line-height: 1;
+      transition: all .15s;
+    }
+
+    #settings-close:hover {
+      color: #fff;
+      background: rgba(255, 255, 255, 0.12);
+    }
+
+    .settings-section {
+      margin-bottom: 24px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .settings-section:last-child {
+      border-bottom: none;
+    }
+
+    .settings-section h3 {
+      color: #999;
+      font-size: 11px;
+      margin-bottom: 14px;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      font-weight: 600;
+    }
+
+    .colour-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+
+    .colour-row label {
+      color: #aaa;
+      font-size: 13px;
+      width: 60px;
+      text-transform: capitalize;
+    }
+
+    .colour-row input[type="color"] {
+      width: 36px;
+      height: 28px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 6px;
+      background: transparent;
+      cursor: pointer;
+      padding: 0;
+    }
+
+    .settings-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .settings-row label {
+      color: #aaa;
+      font-size: 13px;
+      min-width: 80px;
+    }
+
+    .settings-row select {
+      flex: 1;
+      padding: 8px 12px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.06);
+      color: #fff;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      font-size: 13px;
+      cursor: pointer;
+    }
+
+    .settings-row input[type="range"] {
+      flex: 1;
+      accent-color: #3498db;
+    }
+
+    .size-value {
+      color: #fff;
+      font-size: 13px;
+      min-width: 30px;
+      text-align: right;
+    }
+
+    /* ── Apple-style toggle ─────────────────────────────────── */
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 0;
+    }
+
+    .toggle-row .toggle-label {
+      color: #ccc;
+      font-size: 14px;
+    }
+
+    .toggle-row .toggle-desc {
+      color: #666;
+      font-size: 11px;
+      margin-top: 2px;
+    }
+
+    .toggle-switch {
+      position: relative;
+      width: 46px;
+      height: 28px;
+      flex-shrink: 0;
+    }
+
+    .toggle-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .toggle-slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(255, 255, 255, 0.12);
+      border-radius: 28px;
+      transition: background 0.3s;
+    }
+
+    .toggle-slider::before {
+      content: '';
+      position: absolute;
+      height: 22px;
+      width: 22px;
+      left: 3px;
+      bottom: 3px;
+      background: #fff;
+      border-radius: 50%;
+      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+    }
+
+    .toggle-switch input:checked+.toggle-slider {
+      background: #34c759;
+    }
+
+    .toggle-switch input:checked+.toggle-slider::before {
+      transform: translateX(18px);
+    }
+
+    /* ── Place mode extras ──────────────────────────────────── */
+    .place-options {
+      display: none;
+      margin-top: 12px;
+      padding: 12px;
+      background: rgba(255, 255, 255, 0.04);
+      border-radius: 10px;
+    }
+
+    .place-options.visible {
+      display: block;
+    }
+
+    .place-options select {
+      width: 100%;
+      padding: 8px 12px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.06);
+      color: #fff;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      font-size: 13px;
+      cursor: pointer;
+    }
+
+    .place-options label {
+      display: block;
+      color: #888;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 6px;
+    }
+
+    /* ── Background settings ────────────────────────────────── */
+    #bg-image-upload {
+      display: block;
+      margin-top: 10px;
+    }
+
+    #bg-image-upload label {
+      display: block;
+      color: #888;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 6px;
+    }
+
+    #bg-image-upload input[type="file"] {
+      font-size: 12px;
+      color: #888;
+      width: 100%;
+    }
+
+    #bg-image-clear {
+      display: none;
+      margin-top: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 8px;
+      padding: 6px 14px;
+      font-size: 12px;
+      cursor: pointer;
+      color: #aaa;
+      background: rgba(255, 255, 255, 0.04);
+      transition: all .15s;
+    }
+
+    #bg-image-clear:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: #fff;
+    }
+
+    /* ── Advanced section ────────────────────────────────── */
+    .advanced-toggle {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      padding: 10px 0;
+      user-select: none;
+    }
+
+    .advanced-toggle h3 {
+      margin: 0;
+    }
+
+    .advanced-arrow {
+      color: #666;
+      font-size: 14px;
+      transition: transform 0.25s;
+    }
+
+    .advanced-arrow.open {
+      transform: rotate(180deg);
+    }
+
+    .advanced-content {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .advanced-content.open {
+      max-height: 800px;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="ui">
+    <button class="spawn-btn red" data-colour="red">+ Red</button>
+    <span class="counter" id="count-red">0</span>
+    <button class="spawn-btn blue" data-colour="blue">+ Blue</button>
+    <span class="counter" id="count-blue">0</span>
+    <button class="spawn-btn green" data-colour="green">+ Green</button>
+    <span class="counter" id="count-green">0</span>
+    <button class="spawn-btn yellow" data-colour="yellow">+ Yellow</button>
+    <span class="counter" id="count-yellow">0</span>
+    <span class="toolbar-sep"></span>
+    <span class="ui-label">×</span>
+    <input type="number" id="spawn-count" value="1" min="1" max="100">
+    <button id="spawn-all-btn">Spawn All</button>
+    <span class="toolbar-sep"></span>
+    <button class="toolbar-btn" id="pause-btn">⏸ Pause</button>
+    <button class="toolbar-btn" id="clear-btn">Clear All</button>
+    <button class="toolbar-btn" id="settings-btn">⚙ Settings</button>
+  </div>
+  <div id="settings-overlay"></div>
+  <div id="settings-panel">
+    <h2>Settings <button id="settings-close">✕</button></h2>
+
+    <div class="settings-section">
+      <h3>Spawn Modes</h3>
+      <div class="toggle-row">
+        <div>
+          <div class="toggle-label">Place Mode</div>
+          <div class="toggle-desc">Click on the map to spawn entities</div>
+        </div>
+        <label class="toggle-switch">
+          <input type="checkbox" id="toggle-place">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+      <div class="place-options" id="place-options">
+        <label>Team to place</label>
+        <select id="place-colour">
+          <option value="red">Red</option>
+          <option value="blue">Blue</option>
+          <option value="green">Green</option>
+          <option value="yellow">Yellow</option>
+        </select>
+      </div>
+      <div class="toggle-row">
+        <div>
+          <div class="toggle-label">Sides Mode</div>
+          <div class="toggle-desc">Teams spawn on their own half of the map</div>
+        </div>
+        <label class="toggle-switch">
+          <input type="checkbox" id="toggle-sides">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <div class="advanced-toggle" id="advanced-toggle">
+        <h3>Advanced</h3>
+        <span class="advanced-arrow" id="advanced-arrow">▼</span>
+      </div>
+      <div class="advanced-content" id="advanced-content">
+
+        <div style="padding-top:12px;">
+          <h3
+            style="color:#999;font-size:11px;margin-bottom:14px;text-transform:uppercase;letter-spacing:1.5px;font-weight:600;">
+            Team Colours</h3>
+          <div class="colour-row"><label>Red</label><input type="color" id="colour-red" value="#e74c3c"></div>
+          <div class="colour-row"><label>Blue</label><input type="color" id="colour-blue" value="#3498db"></div>
+          <div class="colour-row"><label>Green</label><input type="color" id="colour-green" value="#2ecc71"></div>
+          <div class="colour-row"><label>Yellow</label><input type="color" id="colour-yellow" value="#f1c40f"></div>
+        </div>
+
+        <div style="padding-top:16px;">
+          <h3
+            style="color:#999;font-size:11px;margin-bottom:14px;text-transform:uppercase;letter-spacing:1.5px;font-weight:600;">
+            Shape Mode</h3>
+          <div class="settings-row">
+            <label>Shape</label>
+            <select id="shape-mode">
+              <option value="stickman" selected>Stickmen (Default)</option>
+              <option value="circles">Circles</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="padding-top:4px;display:none;" id="circle-settings">
+          <h3
+            style="color:#999;font-size:11px;margin-bottom:14px;text-transform:uppercase;letter-spacing:1.5px;font-weight:600;">
+            Circle Settings</h3>
+          <div class="settings-row">
+            <label>Size</label>
+            <input type="range" id="circle-size" min="4" max="20" value="8">
+            <span class="size-value" id="circle-size-val">8</span>
+          </div>
+        </div>
+
+        <div style="padding-top:16px;">
+          <h3
+            style="color:#999;font-size:11px;margin-bottom:14px;text-transform:uppercase;letter-spacing:1.5px;font-weight:600;">
+            Background</h3>
+          <div class="colour-row"><label>Colour</label><input type="color" id="bg-colour" value="#16213e"></div>
+          <div id="bg-image-upload">
+            <label>Background Image</label>
+            <input type="file" id="bg-image" accept="image/*">
+          </div>
+          <button id="bg-image-clear">✕ Clear Image</button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+  <canvas id="arena"></canvas>
+
+  <script>
+    // ─── Constants ───────────────────────────────────────────────────────
+    const COLOURS = {
+      red: { fill: '#e74c3c', stroke: '#c0392b' },
+      blue: { fill: '#3498db', stroke: '#2980b9' },
+      green: { fill: '#2ecc71', stroke: '#27ae60' },
+      yellow: { fill: '#f1c40f', stroke: '#d4ac0f' },
+    };
+    const SPEED = 1.6;
+    const FLEE_SPEED = 2.2;
+    const CONTACT_RANGE = 22;
+    const ATTACK_RANGE = 20;
+    const ATTACK_CD = 0.5;   // seconds
+    const DAMAGE = 12;
+    const MAX_HP = 100;
+    const SEPARATION = 14;
+    const HEAD_R = 6;
+    const BODY_H = 18;
+    const LEG_H = 14;
+    const ARM_LEN = 12;
+    const HP_BAR_W = 20;
+    const HP_BAR_H = 3;
+    const UI_TOP_MARGIN = 52;
+    const DEATH_FADE_DUR = 0.35;  // seconds
+
+    // ─── Settings state ──────────────────────────────────────────────────
+    let shapeMode = 'stickman'; // 'stickman' | 'circles'
+    let circleRadius = 8;
+    let bgColour = '#16213e';
+    let bgImage = null;
+    let sidesMode = false;
+    const SIDE_ZONES = {
+      red: { xMin: 0, xMax: 0.5, yMin: 0, yMax: 1 },
+      blue: { xMin: 0.5, xMax: 1, yMin: 0, yMax: 1 },
+      green: { xMin: 0, xMax: 1, yMin: 0, yMax: 0.5 },
+      yellow: { xMin: 0, xMax: 1, yMin: 0.5, yMax: 1 },
+    };
+
+    function hexToRgb(hex) {
+      return {
+        r: parseInt(hex.slice(1, 3), 16),
+        g: parseInt(hex.slice(3, 5), 16),
+        b: parseInt(hex.slice(5, 7), 16),
+      };
+    }
+
+    function darkenHex(hex, amount) {
+      const { r, g, b } = hexToRgb(hex);
+      const d = 1 - amount;
+      const clamp = v => Math.max(0, Math.min(255, Math.round(v * d)));
+      return `rgb(${clamp(r)},${clamp(g)},${clamp(b)})`;
+    }
+
+    function isLightColour(hex) {
+      const { r, g, b } = hexToRgb(hex);
+      return (r * 299 + g * 587 + b * 114) / 1000 > 150;
+    }
+
+    // ─── Canvas setup ────────────────────────────────────────────────────
+    const canvas = document.getElementById('arena');
+    const ctx = canvas.getContext('2d');
+
+    function resize() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    // ─── Entity model ────────────────────────────────────────────────────
+    let nextId = 0;
+    const stickmen = [];   // alive
+    const corpses = [];   // dying (fade-out)
+
+    function createStickmanAt(colour, x, y, spread) {
+      return {
+        id: nextId++,
+        x: x + (Math.random() - 0.5) * spread,
+        y: y + (Math.random() - 0.5) * spread,
+        vx: 0,
+        vy: 0,
+        colour,
+        hp: MAX_HP,
+        maxHp: MAX_HP,
+        groupId: null,
+        state: 'idle',
+        facing: 1,
+        target: null,
+        attackCD: 0,
+        punchT: 0,
+      };
+    }
+
+    function createStickman(colour) {
+      const margin = 40;
+      let x, y;
+      if (sidesMode) {
+        const zone = SIDE_ZONES[colour];
+        const areaW = canvas.width - margin * 2;
+        const areaH = canvas.height - UI_TOP_MARGIN - margin * 2;
+        const zoneLeft = margin + zone.xMin * areaW;
+        const zoneRight = margin + zone.xMax * areaW;
+        const zoneTop = UI_TOP_MARGIN + margin + zone.yMin * areaH;
+        const zoneBot = UI_TOP_MARGIN + margin + zone.yMax * areaH;
+        x = zoneLeft + Math.random() * (zoneRight - zoneLeft);
+        y = zoneTop + Math.random() * (zoneBot - zoneTop);
+      } else {
+        x = margin + Math.random() * (canvas.width - margin * 2);
+        y = UI_TOP_MARGIN + margin + Math.random() * (canvas.height - UI_TOP_MARGIN - margin * 2);
+      }
+      return {
+        id: nextId++,
+        x,
+        y,
+        vx: 0,
+        vy: 0,
+        colour,
+        hp: MAX_HP,
+        maxHp: MAX_HP,
+        groupId: null,
+        state: 'idle',       // idle | moving | attacking | fleeing
+        facing: 1,            // 1 right, -1 left
+        target: null,
+        attackCD: 0,
+        punchT: 0,            // animation timer
+      };
+    }
+
+    // ─── Group tracking (rebuilt every frame) ────────────────────────────
+    let groups = {};  // groupId → Set of stickman ids
+
+    function rebuildGroups() {
+      // Union-Find for same-colour stickmen within CONTACT_RANGE
+      const parent = {};
+      const find = (a) => { while (parent[a] !== a) { parent[a] = parent[parent[a]]; a = parent[a]; } return a; };
+      const union = (a, b) => { parent[find(a)] = find(b); };
+
+      for (const s of stickmen) parent[s.id] = s.id;
+
+      for (let i = 0; i < stickmen.length; i++) {
+        for (let j = i + 1; j < stickmen.length; j++) {
+          const a = stickmen[i], b = stickmen[j];
+          if (a.colour !== b.colour) continue;
+          const dx = a.x - b.x, dy = a.y - b.y;
+          if (dx * dx + dy * dy < CONTACT_RANGE * CONTACT_RANGE * 4) {
+            union(a.id, b.id);
+          }
+        }
+      }
+
+      groups = {};
+      for (const s of stickmen) {
+        const root = find(s.id);
+        s.groupId = root;
+        if (!groups[root]) groups[root] = new Set();
+        groups[root].add(s.id);
+      }
+    }
+
+    function groupSize(s) {
+      return groups[s.groupId] ? groups[s.groupId].size : 1;
+    }
+
+    // ─── AI & movement ──────────────────────────────────────────────────
+    function updateAI(dt) {
+      const curAttackRange = shapeMode === 'circles' ? circleRadius * 2 + 2 : ATTACK_RANGE;
+      for (const s of stickmen) {
+        // Find nearest enemy
+        let nearestEnemy = null, nearDist = Infinity;
+        for (const o of stickmen) {
+          if (o.colour === s.colour) continue;
+          const dx = o.x - s.x, dy = o.y - s.y;
+          const d = Math.sqrt(dx * dx + dy * dy);
+          if (d < nearDist) { nearDist = d; nearestEnemy = o; }
+        }
+
+        if (!nearestEnemy) {
+          s.state = 'idle'; s.vx = 0; s.vy = 0;
+          continue;
+        }
+
+        // Flee check: enemy group > 2× own group
+        const mySize = groupSize(s);
+        const enemySize = groupSize(nearestEnemy);
+        if (enemySize > mySize * 2) {
+          s.state = 'fleeing';
+          const dx = s.x - nearestEnemy.x, dy = s.y - nearestEnemy.y;
+          const d = Math.sqrt(dx * dx + dy * dy) || 1;
+          s.vx = (dx / d) * FLEE_SPEED;
+          s.vy = (dy / d) * FLEE_SPEED;
+          s.facing = s.vx >= 0 ? 1 : -1;
+          continue;
+        }
+
+        // Move toward nearest enemy
+        if (nearDist > curAttackRange) {
+          s.state = 'moving';
+          const dx = nearestEnemy.x - s.x, dy = nearestEnemy.y - s.y;
+          const d = Math.sqrt(dx * dx + dy * dy) || 1;
+          s.vx = (dx / d) * SPEED;
+          s.vy = (dy / d) * SPEED;
+          s.facing = s.vx >= 0 ? 1 : -1;
+        } else {
+          // In attack range
+          s.state = 'attacking';
+          s.target = nearestEnemy;
+          s.vx = 0; s.vy = 0;
+          s.facing = nearestEnemy.x >= s.x ? 1 : -1;
+        }
+      }
+
+      // Separation force between allies
+      for (let i = 0; i < stickmen.length; i++) {
+        for (let j = i + 1; j < stickmen.length; j++) {
+          const a = stickmen[i], b = stickmen[j];
+          if (a.colour !== b.colour) continue;
+          const dx = a.x - b.x, dy = a.y - b.y;
+          const d = Math.sqrt(dx * dx + dy * dy) || 0.1;
+          if (d < SEPARATION) {
+            const push = (SEPARATION - d) * 0.3;
+            const nx = dx / d, ny = dy / d;
+            a.vx += nx * push; a.vy += ny * push;
+            b.vx -= nx * push; b.vy -= ny * push;
+          }
+        }
+      }
+
+      // Apply velocities & clamp to bounds
+      for (const s of stickmen) {
+        s.x += s.vx;
+        s.y += s.vy;
+        const pad = shapeMode === 'circles' ? circleRadius : HEAD_R;
+        const botPad = shapeMode === 'circles' ? circleRadius : LEG_H;
+        s.x = Math.max(pad + 2, Math.min(canvas.width - pad - 2, s.x));
+        s.y = Math.max(UI_TOP_MARGIN + pad + 2, Math.min(canvas.height - botPad - 2, s.y));
+      }
+    }
+
+    // ─── Combat ──────────────────────────────────────────────────────────
+    function updateCombat(dt) {
+      for (const s of stickmen) {
+        s.attackCD = Math.max(0, s.attackCD - dt);
+        s.punchT = Math.max(0, s.punchT - dt);
+
+        if (s.state === 'attacking' && s.target && s.attackCD <= 0) {
+          const t = s.target;
+          if (t.hp > 0) {
+            t.hp -= DAMAGE;
+            s.attackCD = ATTACK_CD;
+            s.punchT = 0.15;
+          }
+        }
+      }
+
+      // Remove dead stickmen
+      for (let i = stickmen.length - 1; i >= 0; i--) {
+        if (stickmen[i].hp <= 0) {
+          const dead = stickmen.splice(i, 1)[0];
+          dead.fadeT = DEATH_FADE_DUR;
+          corpses.push(dead);
+        }
+      }
+
+      // Fade corpses
+      for (let i = corpses.length - 1; i >= 0; i--) {
+        corpses[i].fadeT -= dt;
+        if (corpses[i].fadeT <= 0) corpses.splice(i, 1);
+      }
+    }
+
+    // ─── Rendering ───────────────────────────────────────────────────────
+    function drawStickman(s, alpha) {
+      const { x, y, colour, facing, punchT, hp, maxHp } = s;
+      const c = COLOURS[colour];
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+
+      const headY = y - BODY_H - HEAD_R;
+      const bodyBot = y;
+
+      // Legs (slight walk sway)
+      const t = performance.now() / 200;
+      const legSway = (s.state === 'moving' || s.state === 'fleeing') ? Math.sin(t + s.id) * 5 : 0;
+      ctx.strokeStyle = c.stroke;
+      ctx.lineWidth = 2.5;
+      ctx.beginPath(); ctx.moveTo(x, bodyBot); ctx.lineTo(x - 5 + legSway, bodyBot + LEG_H); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(x, bodyBot); ctx.lineTo(x + 5 - legSway, bodyBot + LEG_H); ctx.stroke();
+
+      // Body
+      ctx.strokeStyle = c.fill;
+      ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.moveTo(x, headY + HEAD_R); ctx.lineTo(x, bodyBot); ctx.stroke();
+
+      // Arms
+      const shoulderY = headY + HEAD_R + 5;
+      if (punchT > 0) {
+        // Punching arm (forward)
+        ctx.beginPath();
+        ctx.moveTo(x, shoulderY);
+        ctx.lineTo(x + facing * ARM_LEN * 1.3, shoulderY - 2);
+        ctx.stroke();
+        // Other arm back
+        ctx.beginPath();
+        ctx.moveTo(x, shoulderY);
+        ctx.lineTo(x - facing * ARM_LEN * 0.6, shoulderY + 6);
+        ctx.stroke();
+      } else {
+        const armSway = (s.state === 'moving' || s.state === 'fleeing') ? Math.sin(t + s.id) * 4 : 0;
+        ctx.beginPath();
+        ctx.moveTo(x, shoulderY);
+        ctx.lineTo(x - ARM_LEN * 0.6, shoulderY + 8 + armSway);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(x, shoulderY);
+        ctx.lineTo(x + ARM_LEN * 0.6, shoulderY + 8 - armSway);
+        ctx.stroke();
+      }
+
+      // Head
+      ctx.fillStyle = c.fill;
+      ctx.beginPath();
+      ctx.arc(x, headY, HEAD_R, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = c.stroke;
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+
+      // HP bar (skip if full)
+      if (hp < maxHp) {
+        const hpRatio = Math.max(0, hp / maxHp);
+        const barX = x - HP_BAR_W / 2;
+        const barY = headY - HEAD_R - 7;
+        ctx.fillStyle = '#444';
+        ctx.fillRect(barX, barY, HP_BAR_W, HP_BAR_H);
+        // Gradient: green → yellow → red
+        const r = Math.round(255 * (1 - hpRatio));
+        const g = Math.round(255 * hpRatio);
+        ctx.fillStyle = `rgb(${r},${g},50)`;
+        ctx.fillRect(barX, barY, HP_BAR_W * hpRatio, HP_BAR_H);
+      }
+
+      ctx.restore();
+    }
+
+    // ─── Circle mode rendering ───────────────────────────────────────────
+    function drawCircleEntity(s, alpha) {
+      const c = COLOURS[s.colour];
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle = c.fill;
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, circleRadius, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    function resolveCircleCollisions() {
+      const minDist = circleRadius * 2;
+      for (let pass = 0; pass < 3; pass++) {
+        for (let i = 0; i < stickmen.length; i++) {
+          for (let j = i + 1; j < stickmen.length; j++) {
+            const a = stickmen[i], b = stickmen[j];
+            const dx = a.x - b.x, dy = a.y - b.y;
+            const d = Math.sqrt(dx * dx + dy * dy) || 0.01;
+            if (d < minDist) {
+              const overlap = (minDist - d) * 0.5;
+              const nx = dx / d, ny = dy / d;
+              a.x += nx * overlap; a.y += ny * overlap;
+              b.x -= nx * overlap; b.y -= ny * overlap;
+            }
+          }
+        }
+      }
+    }
+
+    function render() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Background
+      if (bgImage) {
+        const cw = canvas.width, ch = canvas.height;
+        const iw = bgImage.width, ih = bgImage.height;
+        const scale = Math.max(cw / iw, ch / ih);
+        const sw = iw * scale, sh = ih * scale;
+        ctx.drawImage(bgImage, (cw - sw) / 2, (ch - sh) / 2, sw, sh);
+      } else {
+        ctx.fillStyle = bgColour;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+      }
+
+      // Grid dots for depth
+      ctx.fillStyle = 'rgba(255,255,255,0.03)';
+      for (let gx = 0; gx < canvas.width; gx += 40) {
+        for (let gy = UI_TOP_MARGIN; gy < canvas.height; gy += 40) {
+          ctx.fillRect(gx, gy, 2, 2);
+        }
+      }
+
+      const drawFn = shapeMode === 'circles' ? drawCircleEntity : drawStickman;
+      for (const c of corpses) drawFn(c, c.fadeT / DEATH_FADE_DUR * 0.6);
+      for (const s of stickmen) drawFn(s, 1);
+
+      // Update counters
+      const counts = { red: 0, blue: 0, green: 0, yellow: 0 };
+      for (const s of stickmen) counts[s.colour]++;
+      for (const col of Object.keys(counts)) {
+        document.getElementById('count-' + col).textContent = counts[col];
+      }
+    }
+
+    // ─── Game loop ───────────────────────────────────────────────────────
+    let lastTime = performance.now();
+    let paused = false;
+
+    function gameLoop(now) {
+      const dt = Math.min((now - lastTime) / 1000, 0.05);
+      lastTime = now;
+
+      if (!paused) {
+        rebuildGroups();
+        updateAI(dt);
+        if (shapeMode === 'circles') resolveCircleCollisions();
+        updateCombat(dt);
+      }
+      render();
+
+      requestAnimationFrame(gameLoop);
+    }
+    requestAnimationFrame(gameLoop);
+
+    // ─── Pause button ───────────────────────────────────────────────────
+    const pauseBtn = document.getElementById('pause-btn');
+    pauseBtn.addEventListener('click', () => {
+      paused = !paused;
+      pauseBtn.textContent = paused ? '▶ Resume' : '⏸ Pause';
+      pauseBtn.classList.toggle('active', paused);
+    });
+
+    // ─── Helpers ─────────────────────────────────────────────────────────
+    function getSpawnCount() {
+      const val = parseInt(document.getElementById('spawn-count').value, 10);
+      return Math.max(1, Math.min(100, isNaN(val) ? 1 : val));
+    }
+
+    function spawnColour(colour) {
+      const n = getSpawnCount();
+      for (let i = 0; i < n; i++) stickmen.push(createStickman(colour));
+    }
+
+    // ─── Place mode ──────────────────────────────────────────────────────
+    let placeMode = false;
+    const togglePlace = document.getElementById('toggle-place');
+    const placeOptions = document.getElementById('place-options');
+    const placeColourSelect = document.getElementById('place-colour');
+
+    togglePlace.addEventListener('change', () => {
+      placeMode = togglePlace.checked;
+      placeOptions.classList.toggle('visible', placeMode);
+      canvas.style.cursor = placeMode ? 'crosshair' : '';
+    });
+
+    canvas.addEventListener('click', (e) => {
+      if (!placeMode) return;
+      const rect = canvas.getBoundingClientRect();
+      const x = (e.clientX - rect.left) * (canvas.width / rect.width);
+      const y = (e.clientY - rect.top) * (canvas.height / rect.height);
+      const colour = placeColourSelect.value;
+      const n = getSpawnCount();
+      const spread = Math.min(40, n * 4);
+      for (let i = 0; i < n; i++) stickmen.push(createStickmanAt(colour, x, y, spread));
+    });
+
+    // ─── Sides mode ──────────────────────────────────────────────────────
+    const toggleSides = document.getElementById('toggle-sides');
+    toggleSides.addEventListener('change', () => {
+      sidesMode = toggleSides.checked;
+    });
+
+    // ─── Spawn buttons ──────────────────────────────────────────────────
+    document.querySelectorAll('.spawn-btn').forEach(btn => {
+      btn.addEventListener('click', () => spawnColour(btn.dataset.colour));
+    });
+
+    document.getElementById('spawn-all-btn').addEventListener('click', () => {
+      for (const col of ['red', 'blue', 'green', 'yellow']) spawnColour(col);
+    });
+
+    document.getElementById('clear-btn').addEventListener('click', () => {
+      stickmen.length = 0;
+      corpses.length = 0;
+    });
+
+    // ─── Settings panel ──────────────────────────────────────────────────
+    const settingsBtn = document.getElementById('settings-btn');
+    const settingsPanel = document.getElementById('settings-panel');
+    const settingsOverlay = document.getElementById('settings-overlay');
+    const settingsClose = document.getElementById('settings-close');
+
+    function openSettings() { settingsPanel.classList.add('open'); settingsOverlay.classList.add('open'); }
+    function closeSettings() { settingsPanel.classList.remove('open'); settingsOverlay.classList.remove('open'); }
+
+    settingsBtn.addEventListener('click', openSettings);
+    settingsClose.addEventListener('click', closeSettings);
+    settingsOverlay.addEventListener('click', closeSettings);
+
+    // ─── Advanced toggle ─────────────────────────────────────────────────
+    const advancedToggle = document.getElementById('advanced-toggle');
+    const advancedArrow = document.getElementById('advanced-arrow');
+    const advancedContent = document.getElementById('advanced-content');
+    advancedToggle.addEventListener('click', () => {
+      advancedContent.classList.toggle('open');
+      advancedArrow.classList.toggle('open');
+    });
+
+    // Colour pickers
+    for (const col of ['red', 'blue', 'green', 'yellow']) {
+      document.getElementById('colour-' + col).addEventListener('input', (e) => {
+        const hex = e.target.value;
+        COLOURS[col].fill = hex;
+        COLOURS[col].stroke = darkenHex(hex, 0.15);
+        const btn = document.querySelector(`.spawn-btn[data-colour="${col}"]`);
+        if (btn) {
+          btn.style.background = hex;
+          btn.style.boxShadow = `0 0 10px ${hex}88`;
+          btn.style.color = isLightColour(hex) ? '#333' : '#fff';
+        }
+      });
+    }
+
+    // Shape mode selector
+    const shapeModeSelect = document.getElementById('shape-mode');
+    const circleSettingsEl = document.getElementById('circle-settings');
+
+    shapeModeSelect.addEventListener('change', (e) => {
+      shapeMode = e.target.value;
+      circleSettingsEl.style.display = shapeMode === 'circles' ? 'block' : 'none';
+    });
+
+    // Circle size slider
+    const circleSizeSlider = document.getElementById('circle-size');
+    const circleSizeVal = document.getElementById('circle-size-val');
+    circleSizeSlider.addEventListener('input', (e) => {
+      circleRadius = parseInt(e.target.value, 10);
+      circleSizeVal.textContent = circleRadius;
+    });
+
+    // ─── Background settings ─────────────────────────────────────────────
+    const bgColourPicker = document.getElementById('bg-colour');
+    const bgImageInput = document.getElementById('bg-image');
+    const bgImageClear = document.getElementById('bg-image-clear');
+
+    bgColourPicker.addEventListener('input', (e) => {
+      bgColour = e.target.value;
+      document.body.style.background = bgColour;
+    });
+
+    bgImageInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file || !file.type.startsWith('image/')) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        const img = new Image();
+        img.onload = () => {
+          bgImage = img;
+          bgImageClear.style.display = 'inline-block';
+        };
+        img.src = reader.result;
+      };
+      reader.readAsDataURL(file);
+    });
+
+    bgImageClear.addEventListener('click', () => {
+      bgImage = null;
+      bgImageInput.value = '';
+      bgImageClear.style.display = 'none';
+    });
+  </script>
+</body>
+
+</html>
