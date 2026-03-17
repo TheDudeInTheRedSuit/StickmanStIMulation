@@ -954,8 +954,8 @@
       navDirty = false;
     }
 
-    // A* with a budget cap for performance
-    const A_STAR_BUDGET = 400; // max nodes explored per query
+    // A* with a budget cap for performance — returns FULL path as [{x,y}, ...]
+    const A_STAR_BUDGET = 800; // max nodes explored per query
     function astarPath(sx, sy, ex, ey) {
       if (!navGrid) return null;
       const sgx = Math.floor(sx / NAV_CELL), sgy = Math.floor(sy / NAV_CELL);
@@ -985,7 +985,6 @@
       // Costs: wall=impassable, hazard=high cost, water=moderate cost, open=1
       const COST = [1, Infinity, 25, 3]; // indexed by navGrid value
 
-      // Min-heap via sorted array (sufficient for small budgets)
       const gScore = new Map();
       const fScore = new Map();
       const cameFrom = new Map();
@@ -1030,18 +1029,23 @@
         inOpen.delete(current);
 
         if (current === endKey) {
-          // Reconstruct path — return the next waypoint after start
-          const path = [];
+          // Reconstruct FULL path as [{x,y}, ...]
+          const keys = [];
           let c = current;
-          while (cameFrom.has(c)) { path.push(c); c = cameFrom.get(c); }
-          path.reverse();
-          // Return the waypoint a few steps ahead for smoother movement
-          const step = Math.min(2, path.length - 1);
-          const wpKey = path[Math.max(0, step)];
-          return {
-            x: (wpKey % navW) * NAV_CELL + NAV_CELL / 2,
-            y: ((wpKey / navW) | 0) * NAV_CELL + NAV_CELL / 2,
-          };
+          while (cameFrom.has(c)) { keys.push(c); c = cameFrom.get(c); }
+          keys.reverse();
+          // Simplify: skip every other point for smoothness, always keep last
+          const pts = [];
+          for (let i = 0; i < keys.length; i++) {
+            if (i % 2 === 0 || i === keys.length - 1) {
+              const k = keys[i];
+              pts.push({
+                x: (k % navW) * NAV_CELL + NAV_CELL / 2,
+                y: ((k / navW) | 0) * NAV_CELL + NAV_CELL / 2,
+              });
+            }
+          }
+          return pts; // array of {x, y}
         }
 
         closed.add(current);
@@ -1192,16 +1196,27 @@
 
           let goalX = chosenEnemy.x, goalY = chosenEnemy.y;
 
-          // A* pathfinding: compute waypoint if enabled and obstacles exist
+          // A* pathfinding: compute full path if enabled and obstacles exist
           if (smartPathfinding && mapElements.length > 0) {
             // Stagger: only recalc every PF_INTERVAL frames per stickman
-            if ((pfFrameCounter + s.id) % PF_INTERVAL === 0 || !s._wp) {
-              const wp = astarPath(s.x, s.y, chosenEnemy.x, chosenEnemy.y);
-              s._wp = wp; // cache waypoint
+            const needRecalc = (pfFrameCounter + s.id) % PF_INTERVAL === 0
+              || !s._path || s._path.length === 0
+              || s._pathTargetId !== chosenEnemy.id;
+            if (needRecalc) {
+              const path = astarPath(s.x, s.y, chosenEnemy.x, chosenEnemy.y);
+              s._path = path; // full waypoint array or null
+              s._pathTargetId = chosenEnemy.id;
             }
-            if (s._wp) {
-              goalX = s._wp.x;
-              goalY = s._wp.y;
+            // Follow first waypoint; pop when close enough
+            if (s._path && s._path.length > 0) {
+              const wp = s._path[0];
+              const wpDx = wp.x - s.x, wpDy = wp.y - s.y;
+              const wpDist = Math.sqrt(wpDx * wpDx + wpDy * wpDy);
+              if (wpDist < NAV_CELL * 0.8 && s._path.length > 1) {
+                s._path.shift(); // reached this waypoint, advance
+              }
+              goalX = s._path[0].x;
+              goalY = s._path[0].y;
             }
           }
 
@@ -1491,6 +1506,29 @@
       const drawFn = shapeMode === 'circles' ? drawCircleEntity : drawStickman;
       for (const c of corpses) drawFn(c, c.fadeT / DEATH_FADE_DUR * 0.6);
       for (const s of stickmen) drawFn(s, 1);
+
+      // Full path rendering (when smart pathfinding is on)
+      if (smartPathfinding) {
+        ctx.save();
+        ctx.lineWidth = 1.5;
+        ctx.globalAlpha = 0.35;
+        ctx.setLineDash([4, 4]);
+        for (const s of stickmen) {
+          if (!s._path || s._path.length === 0) continue;
+          const c = COLOURS[s.colour];
+          ctx.strokeStyle = c.fill;
+          ctx.beginPath();
+          ctx.moveTo(s.x, s.y);
+          for (const wp of s._path) ctx.lineTo(wp.x, wp.y);
+          ctx.stroke();
+          // Small dot at each waypoint
+          ctx.fillStyle = c.fill;
+          for (const wp of s._path) {
+            ctx.beginPath(); ctx.arc(wp.x, wp.y, 2, 0, Math.PI * 2); ctx.fill();
+          }
+        }
+        ctx.restore();
+      }
 
       // Direction indicators
       if (showDirections) {
