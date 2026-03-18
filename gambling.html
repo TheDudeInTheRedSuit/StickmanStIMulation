@@ -960,6 +960,15 @@
         // MULTIPLAYER (PeerJS – peer-to-peer via 4-char party code)
         // ═══════════════════════════════════════════════════════════════
         const PEER_PREFIX = 'stickbet-';
+        const ICE_CONFIG = {
+            iceServers: [
+                { urls: 'stun:stun.l.google.com:19302' },
+                { urls: 'stun:stun1.l.google.com:19302' },
+                { urls: 'turn:openrelay.metered.ca:80', username: 'openrelayproject', credential: 'openrelayproject' },
+                { urls: 'turn:openrelay.metered.ca:443', username: 'openrelayproject', credential: 'openrelayproject' },
+                { urls: 'turn:openrelay.metered.ca:443?transport=tcp', username: 'openrelayproject', credential: 'openrelayproject' },
+            ]
+        };
 
         let players = [];
         let currentRound = 1;
@@ -1009,7 +1018,7 @@
 
             function initPeer(code) {
                 if (hostPeer) hostPeer.destroy();
-                hostPeer = new Peer(PEER_PREFIX + code);
+                hostPeer = new Peer(PEER_PREFIX + code, { config: ICE_CONFIG });
 
                 hostPeer.on('open', () => {
                     document.getElementById('party-code-display').textContent = code;
@@ -1108,7 +1117,7 @@
             btn.disabled = true;
             btn.textContent = 'Connecting...';
 
-            guestPeer = new Peer();
+            guestPeer = new Peer({ config: ICE_CONFIG });
 
             const timeout = setTimeout(() => {
                 if (!guestDC || !guestDC.open) {
