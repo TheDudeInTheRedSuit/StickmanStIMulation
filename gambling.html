@@ -99,23 +99,23 @@
             background: rgba(255, 255, 255, 0.1);
         }
 
-        textarea.rtc-blob {
-            width: 100%;
-            min-height: 80px;
-            padding: 10px;
-            border: 1px solid #444;
-            border-radius: 8px;
-            background: rgba(255, 255, 255, 0.06);
-            color: #fff;
-            font-size: 11px;
-            font-family: 'Courier New', monospace;
-            resize: vertical;
-            word-break: break-all;
+        .party-code-display {
+            text-align: center;
+            padding: 20px;
+            margin: 16px 0;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid #2a2a3e;
+            border-radius: 12px;
         }
 
-        textarea.rtc-blob:focus {
-            outline: none;
-            border-color: #f1c40f;
+        .party-code {
+            font-size: 48px;
+            font-weight: 900;
+            letter-spacing: 12px;
+            color: #f1c40f;
+            text-shadow: 0 0 20px rgba(241, 196, 15, 0.3);
+            font-family: 'Courier New', monospace;
+            user-select: all;
         }
 
         .btn {
@@ -665,6 +665,7 @@
             font-weight: 600;
         }
     </style>
+    <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
 </head>
 
 <body>
@@ -693,39 +694,16 @@
                     <input type="number" id="starting-balance" value="1000" min="100" max="100000" step="100">
                 </div>
 
-                <div class="step" id="host-step-1">
-                    <span class="step-num">1</span>
-                    <span class="step-label">Create a room</span>
-                    <p>Click below to generate your invite code.</p>
-                    <div class="mt-12">
-                        <button class="btn btn-gold" id="host-create-btn">Create Room</button>
-                    </div>
+                <div class="text-center mt-16">
+                    <button class="btn btn-gold w-full" id="host-create-btn" style="padding:14px; font-size:16px;">Create Room</button>
                 </div>
 
-                <div class="step" id="host-step-2" style="display:none;">
-                    <span class="step-num">2</span>
-                    <span class="step-label">Send this invite code to your friends</span>
-                    <p>They paste it in the "Join Game" tab on their device.</p>
-                    <textarea class="rtc-blob mt-12" id="host-offer-text" readonly></textarea>
-                    <div class="mt-12 flex-center gap-8">
-                        <button class="btn btn-gold btn-sm" id="host-copy-offer">Copy Invite Code</button>
+                <div id="host-room-area" style="display:none;">
+                    <div class="party-code-display">
+                        <p style="color:#888; font-size:13px; margin-bottom:8px;">Share this code with friends:</p>
+                        <div class="party-code" id="party-code-display">&middot;&middot;&middot;&middot;</div>
+                        <button class="btn btn-outline btn-sm mt-12" id="copy-code-btn">&#128203; Copy Code</button>
                     </div>
-                </div>
-
-                <div class="step" id="host-step-3" style="display:none;">
-                    <span class="step-num">3</span>
-                    <span class="step-label">Paste your friend's response code</span>
-                    <p>They'll give you a code back after pasting your invite.</p>
-                    <textarea class="rtc-blob mt-12" id="host-answer-text"
-                        placeholder="Paste friend's response code here..."></textarea>
-                    <div class="mt-12 flex-center gap-8">
-                        <button class="btn btn-green btn-sm" id="host-accept-btn">Connect</button>
-                        <button class="btn btn-outline btn-sm" id="host-add-peer-btn" style="display:none;">+ Invite
-                            Another Friend</button>
-                    </div>
-                </div>
-
-                <div id="host-connected-area" style="display:none;">
                     <h2>Players <span class="peer-count" id="peer-count">(1 player)</span></h2>
                     <ul class="player-list" id="player-list"></ul>
                     <div class="text-center mt-16">
@@ -742,31 +720,22 @@
                     <input type="text" id="join-name-input" placeholder="Enter your name" maxlength="20">
                 </div>
 
-                <div class="step" id="join-step-1">
-                    <span class="step-num">1</span>
-                    <span class="step-label">Paste the host's invite code</span>
-                    <p>Get the invite code from whoever created the room.</p>
-                    <textarea class="rtc-blob mt-12" id="join-offer-text"
-                        placeholder="Paste invite code here..."></textarea>
-                    <div class="mt-12 flex-center gap-8">
-                        <button class="btn btn-gold btn-sm" id="join-accept-offer-btn">Accept Invite</button>
-                    </div>
+                <h2>Party Code</h2>
+                <div class="input-row">
+                    <input type="text" id="join-code-input" placeholder="XXXX" maxlength="4"
+                        style="text-transform:uppercase; text-align:center; font-size:24px; font-weight:900; letter-spacing:8px;">
                 </div>
 
-                <div class="step" id="join-step-2" style="display:none;">
-                    <span class="step-num">2</span>
-                    <span class="step-label">Send this response code back to the host</span>
-                    <p>Copy this and send it to the person who invited you.</p>
-                    <textarea class="rtc-blob mt-12" id="join-answer-text" readonly></textarea>
-                    <div class="mt-12 flex-center gap-8">
-                        <button class="btn btn-gold btn-sm" id="join-copy-answer">Copy Response Code</button>
-                    </div>
+                <div class="text-center mt-12">
+                    <button class="btn btn-gold w-full" id="join-btn" style="padding:14px; font-size:16px;">Join Game</button>
                 </div>
 
-                <div class="step" id="join-step-3" style="display:none;">
-                    <span class="step-num" style="background:#2ecc71;">&#10003;</span>
-                    <span class="step-label">Connected!</span>
-                    <p><span class="status-dot connected"></span>Waiting for the host to start the betting round...</p>
+                <div id="join-status" style="display:none;">
+                    <div class="step">
+                        <span class="step-num" style="background:#2ecc71;">&#10003;</span>
+                        <span class="step-label">Connected!</span>
+                        <p><span class="status-dot connected"></span>Waiting for the host to start the betting round...</p>
+                    </div>
                 </div>
             </div>
         </div>
@@ -988,14 +957,9 @@
         requestAnimationFrame(gameLoop);
 
         // ═══════════════════════════════════════════════════════════════
-        // MULTIPLAYER (WebRTC)
+        // MULTIPLAYER (PeerJS – peer-to-peer via 4-char party code)
         // ═══════════════════════════════════════════════════════════════
-        const RTC_CONFIG = {
-            iceServers: [
-                { urls: 'stun:stun.l.google.com:19302' },
-                { urls: 'stun:stun1.l.google.com:19302' },
-            ]
-        };
+        const PEER_PREFIX = 'stickbet-';
 
         let players = [];
         let currentRound = 1;
@@ -1007,9 +971,16 @@
         let startingBalance = 1000;
         let peerConnections = [];
         let guestDC = null;
+        let hostPeer = null;
+        let guestPeer = null;
+        let partyCode = '';
 
-        function encodeSDP(sdp) { return btoa(JSON.stringify(sdp)); }
-        function decodeSDP(str) { return JSON.parse(atob(str)); }
+        function generatePartyCode() {
+            const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+            let code = '';
+            for (let i = 0; i < 4; i++) code += chars[Math.floor(Math.random() * chars.length)];
+            return code;
+        }
 
         // Seeded PRNG so both host & guest produce the same battle
         function mulberry32(a) {
@@ -1022,7 +993,7 @@
         }
 
         // ─── HOST FLOW ───────────────────────────────────────────
-        async function hostCreateOffer() {
+        function hostCreateRoom() {
             const name = document.getElementById('host-name-input').value.trim();
             if (!name) { showToast('Enter your name first!'); return; }
             myName = name;
@@ -1030,67 +1001,69 @@
             isHost = true;
             myPlayerId = nextPlayerId++;
             players = [{ name: myName, balance: startingBalance, id: myPlayerId, isLocal: true }];
-            renderPlayerList(); updatePeerCount();
 
-            await createHostOffer();
+            partyCode = generatePartyCode();
+            const btn = document.getElementById('host-create-btn');
+            btn.disabled = true;
+            btn.textContent = 'Creating room...';
 
-            document.getElementById('host-step-1').style.display = 'none';
-            document.getElementById('host-step-2').style.display = '';
-            document.getElementById('host-step-3').style.display = '';
-            document.getElementById('host-connected-area').style.display = '';
+            function initPeer(code) {
+                if (hostPeer) hostPeer.destroy();
+                hostPeer = new Peer(PEER_PREFIX + code);
+
+                hostPeer.on('open', () => {
+                    document.getElementById('party-code-display').textContent = code;
+                    btn.style.display = 'none';
+                    document.getElementById('host-room-area').style.display = '';
+                    renderPlayerList();
+                    updatePeerCount();
+                    showToast('Room created!');
+                });
+
+                hostPeer.on('connection', (conn) => {
+                    const peer = { dc: conn, name: null, id: null };
+                    peerConnections.push(peer);
+
+                    conn.on('open', () => {
+                        conn.send(JSON.stringify({ type: 'welcome', startingBalance, players, round: currentRound }));
+                    });
+                    conn.on('data', (data) => handleHostMsg(peer, data));
+                    conn.on('close', () => peerDisconnected(peer));
+                    conn.on('error', () => peerDisconnected(peer));
+                });
+
+                hostPeer.on('error', (err) => {
+                    if (err.type === 'unavailable-id') {
+                        partyCode = generatePartyCode();
+                        initPeer(partyCode);
+                        return;
+                    }
+                    btn.disabled = false;
+                    btn.textContent = 'Create Room';
+                    btn.style.display = '';
+                    showToast('Error: ' + (err.message || err.type));
+                });
+            }
+
+            initPeer(partyCode);
         }
 
-        async function createHostOffer() {
-            const pc = new RTCPeerConnection(RTC_CONFIG);
-            const dc = pc.createDataChannel('bets', { ordered: true });
-            const peer = { pc, dc, name: null, id: null };
-
-            dc.onopen = () => {
-                peer.dc = dc;
-                dc.send(JSON.stringify({ type: 'welcome', startingBalance, players, round: currentRound }));
-            };
-            dc.onmessage = (e) => handleHostMsg(peer, e);
-            dc.onclose = () => peerDisconnected(peer);
-            peer.dc = dc;
-            peerConnections.push(peer);
-
-            const offer = await pc.createOffer();
-            await pc.setLocalDescription(offer);
-            await waitForICE(pc);
-
-            document.getElementById('host-offer-text').value = encodeSDP(pc.localDescription);
-            document.getElementById('host-answer-text').value = '';
-        }
-
-        async function hostAcceptAnswer() {
-            const txt = document.getElementById('host-answer-text').value.trim();
-            if (!txt) { showToast('Paste the response code!'); return; }
-            try {
-                const answer = decodeSDP(txt);
-                const peer = peerConnections[peerConnections.length - 1];
-                await peer.pc.setRemoteDescription(new RTCSessionDescription(answer));
-                showToast('Connecting...');
-                document.getElementById('host-answer-text').value = '';
-                document.getElementById('host-add-peer-btn').style.display = '';
-            } catch { showToast('Invalid response code!'); }
-        }
-
-        async function hostAddPeer() {
-            await createHostOffer();
-            showToast('New invite code generated — send it to the next friend!');
-        }
-
-        function handleHostMsg(peer, e) {
-            let msg; try { msg = JSON.parse(e.data); } catch { return; }
+        function handleHostMsg(peer, rawData) {
+            let msg;
+            try { msg = typeof rawData === 'string' ? JSON.parse(rawData) : rawData; } catch { return; }
             if (!msg || typeof msg.type !== 'string') return;
 
             if (msg.type === 'join') {
                 const name = String(msg.name || '').slice(0, 20);
-                if (!name || players.some(p => p.name === name)) { peer.dc.send(JSON.stringify({ type: 'error', msg: 'Name already taken' })); return; }
+                if (!name || players.some(p => p.name === name)) {
+                    peer.dc.send(JSON.stringify({ type: 'error', msg: 'Name already taken' }));
+                    return;
+                }
                 peer.name = name;
                 peer.id = nextPlayerId++;
                 players.push({ name, balance: startingBalance, id: peer.id, isLocal: false });
-                renderPlayerList(); updatePeerCount();
+                renderPlayerList();
+                updatePeerCount();
                 peer.dc.send(JSON.stringify({ type: 'joined', playerId: peer.id, players, round: currentRound, startingBalance }));
                 broadcastToAll({ type: 'player-list', players });
                 showToast(name + ' joined!');
@@ -1105,7 +1078,8 @@
         function peerDisconnected(peer) {
             if (peer.name) {
                 players = players.filter(p => p.id !== peer.id);
-                renderPlayerList(); updatePeerCount();
+                renderPlayerList();
+                updatePeerCount();
                 broadcastToAll({ type: 'player-list', players });
                 showToast(peer.name + ' disconnected');
             }
@@ -1114,54 +1088,83 @@
 
         function broadcastToAll(msg) {
             const str = JSON.stringify(msg);
-            for (const p of peerConnections) { if (p.dc && p.dc.readyState === 'open') p.dc.send(str); }
+            for (const p of peerConnections) { if (p.dc && p.dc.open) p.dc.send(str); }
         }
 
         function updatePeerCount() {
             const n = players.length;
-            document.getElementById('peer-count').textContent = `(${n} player${n !== 1 ? 's' : ''})`;
+            document.getElementById('peer-count').textContent = '(' + n + ' player' + (n !== 1 ? 's' : '') + ')';
         }
 
         // ─── GUEST FLOW ──────────────────────────────────────────
-        async function guestAcceptOffer() {
+        function guestJoinRoom() {
             const name = document.getElementById('join-name-input').value.trim();
             if (!name) { showToast('Enter your name first!'); return; }
             myName = name;
-            const offerStr = document.getElementById('join-offer-text').value.trim();
-            if (!offerStr) { showToast('Paste the invite code!'); return; }
+            const code = document.getElementById('join-code-input').value.trim().toUpperCase();
+            if (!code || code.length !== 4) { showToast('Enter a 4-character party code!'); return; }
 
-            try {
-                const offer = decodeSDP(offerStr);
-                const pc = new RTCPeerConnection(RTC_CONFIG);
+            const btn = document.getElementById('join-btn');
+            btn.disabled = true;
+            btn.textContent = 'Connecting...';
 
-                pc.ondatachannel = (ev) => {
-                    const dc = ev.channel;
-                    guestDC = dc;
-                    dc.onopen = () => { dc.send(JSON.stringify({ type: 'join', name: myName })); };
-                    dc.onmessage = (e) => handleGuestMsg(e);
-                    dc.onclose = () => { showToast('Disconnected from host'); guestDC = null; };
-                };
+            guestPeer = new Peer();
 
-                await pc.setRemoteDescription(new RTCSessionDescription(offer));
-                const answer = await pc.createAnswer();
-                await pc.setLocalDescription(answer);
-                await waitForICE(pc);
+            const timeout = setTimeout(() => {
+                if (!guestDC || !guestDC.open) {
+                    guestPeer.destroy();
+                    btn.disabled = false;
+                    btn.textContent = 'Join Game';
+                    showToast('Could not connect — check the code and try again');
+                }
+            }, 10000);
 
-                document.getElementById('join-answer-text').value = encodeSDP(pc.localDescription);
-                document.getElementById('join-step-1').style.display = 'none';
-                document.getElementById('join-step-2').style.display = '';
-            } catch { showToast('Invalid invite code!'); }
+            guestPeer.on('open', () => {
+                const conn = guestPeer.connect(PEER_PREFIX + code, { reliable: true });
+
+                conn.on('open', () => {
+                    clearTimeout(timeout);
+                    guestDC = conn;
+                    conn.send(JSON.stringify({ type: 'join', name: myName }));
+                });
+
+                conn.on('data', (data) => handleGuestMsg(data));
+
+                conn.on('close', () => {
+                    showToast('Disconnected from host');
+                    guestDC = null;
+                });
+
+                conn.on('error', (err) => {
+                    clearTimeout(timeout);
+                    btn.disabled = false;
+                    btn.textContent = 'Join Game';
+                    showToast('Connection error: ' + (err.message || err.type));
+                });
+            });
+
+            guestPeer.on('error', (err) => {
+                clearTimeout(timeout);
+                btn.disabled = false;
+                btn.textContent = 'Join Game';
+                if (err.type === 'peer-unavailable') {
+                    showToast('Room not found — check the code');
+                } else {
+                    showToast('Error: ' + (err.message || err.type));
+                }
+            });
         }
 
-        function handleGuestMsg(e) {
-            let msg; try { msg = JSON.parse(e.data); } catch { return; }
+        function handleGuestMsg(rawData) {
+            let msg;
+            try { msg = typeof rawData === 'string' ? JSON.parse(rawData) : rawData; } catch { return; }
             if (!msg || typeof msg.type !== 'string') return;
 
             if (msg.type === 'welcome') { startingBalance = msg.startingBalance; players = msg.players; currentRound = msg.round; }
             if (msg.type === 'joined') {
                 myPlayerId = msg.playerId; players = msg.players; currentRound = msg.round; startingBalance = msg.startingBalance;
-                document.getElementById('join-step-2').style.display = 'none';
-                document.getElementById('join-step-3').style.display = '';
+                document.getElementById('join-btn').style.display = 'none';
+                document.getElementById('join-status').style.display = '';
                 showToast('Connected! Waiting for host...');
             }
             if (msg.type === 'error') showToast(msg.msg || 'Error');
@@ -1170,13 +1173,6 @@
             if (msg.type === 'battle-seed') { startBattleFromSeed(msg.seed); }
             if (msg.type === 'results') { players = msg.players; showResults(msg.winner, msg.payouts); }
             if (msg.type === 'back-to-lobby') { guestBackToLobby(); }
-        }
-
-        function waitForICE(pc) {
-            return new Promise(resolve => {
-                if (pc.iceGatheringState === 'complete') resolve();
-                else pc.onicegatheringstatechange = () => { if (pc.iceGatheringState === 'complete') resolve(); };
-            });
         }
 
         // ─── PLAYER LIST ─────────────────────────────────────────
@@ -1450,12 +1446,9 @@
             });
         });
 
-        document.getElementById('host-create-btn').addEventListener('click', hostCreateOffer);
-        document.getElementById('host-copy-offer').addEventListener('click', () => { navigator.clipboard.writeText(document.getElementById('host-offer-text').value).then(() => showToast('Invite code copied!')); });
-        document.getElementById('host-accept-btn').addEventListener('click', hostAcceptAnswer);
-        document.getElementById('host-add-peer-btn').addEventListener('click', hostAddPeer);
-        document.getElementById('join-accept-offer-btn').addEventListener('click', guestAcceptOffer);
-        document.getElementById('join-copy-answer').addEventListener('click', () => { navigator.clipboard.writeText(document.getElementById('join-answer-text').value).then(() => showToast('Response code copied!')); });
+        document.getElementById('host-create-btn').addEventListener('click', hostCreateRoom);
+        document.getElementById('copy-code-btn').addEventListener('click', () => { navigator.clipboard.writeText(partyCode).then(() => showToast('Code copied!')); });
+        document.getElementById('join-btn').addEventListener('click', guestJoinRoom);
 
         document.getElementById('start-betting-btn').addEventListener('click', () => {
             if (players.length < 1) { showToast('Need at least 1 player!'); return; }
