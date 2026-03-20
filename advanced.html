@@ -631,6 +631,16 @@
           <span class="toggle-slider"></span>
         </label>
       </div>
+      <div class="toggle-row">
+        <div>
+          <div class="toggle-label">Follow Mode</div>
+          <div class="toggle-desc">Click a stickman to zoom in and follow them</div>
+        </div>
+        <label class="toggle-switch">
+          <input type="checkbox" id="toggle-follow">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
     </div>
 
     <div class="settings-section">
@@ -791,6 +801,14 @@
     let mapDragStart = null;
     let mapDragCurrent = null;
 
+    // ─── Follow mode / camera state ─────────────────────────────────────────
+    let followMode = false;
+    let followTarget = null;   // stickman being tracked (ref into stickmen[])
+    let cameraX = 0;           // camera center in world coords
+    let cameraY = 0;
+    const FOLLOW_ZOOM = 3;
+    let cameraZoom = 1;
+
     // ─── Pathfinding & debug settings ─────────────────────────────────────
     let smartPathfinding = false;
     let showDirections = false;
@@ -831,6 +849,10 @@
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
       UI_TOP_MARGIN = uiBar.offsetHeight + 4;
+      if (!followTarget) {
+        cameraX = canvas.width / 2;
+        cameraY = canvas.height / 2;
+      }
     }
     window.addEventListener('resize', resize);
     resize();
@@ -1486,7 +1508,7 @@
     function render() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      // Background
+      // Background (drawn in screen space, before camera transform)
       if (bgImage) {
         const cw = canvas.width, ch = canvas.height;
         const iw = bgImage.width, ih = bgImage.height;
@@ -1497,6 +1519,12 @@
         ctx.fillStyle = bgColour;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
       }
+
+      // Apply camera transform for all world-space drawing
+      ctx.save();
+      ctx.translate(canvas.width / 2, canvas.height / 2);
+      ctx.scale(cameraZoom, cameraZoom);
+      ctx.translate(-cameraX, -cameraY);
 
       // Grid dots for depth
       ctx.fillStyle = 'rgba(255,255,255,0.03)';
@@ -1562,7 +1590,7 @@
         ctx.restore();
       }
 
-      // Drag preview
+      // Drag preview (world space — map maker draws in world coords)
       if (mapDragging && mapDragStart && mapDragCurrent && mapMakerTool !== 'eraser') {
         const rx = Math.min(mapDragStart.x, mapDragCurrent.x);
         const ry = Math.min(mapDragStart.y, mapDragCurrent.y);
@@ -1581,7 +1609,10 @@
         ctx.restore();
       }
 
-      // Update counters
+      // End camera transform
+      ctx.restore();
+
+      // Update counters (screen-space UI)
       const counts = { red: 0, blue: 0, green: 0, yellow: 0 };
       for (const s of stickmen) counts[s.colour]++;
       for (const col of Object.keys(counts)) {
@@ -1675,6 +1706,29 @@
         if (shapeMode === 'circles') resolveCircleCollisions();
         updateCombat(dt);
       }
+
+      // Camera: follow target or default view
+      if (followTarget) {
+        if (!stickmen.includes(followTarget)) {
+          // Target died — snap back to default
+          followTarget = null;
+          cameraZoom = 1;
+          cameraX = canvas.width / 2;
+          cameraY = canvas.height / 2;
+          followMode = false;
+          toggleFollow.checked = false;
+          updateCanvasCursor();
+        } else {
+          // Smooth lerp toward target
+          const lerp = 1 - Math.pow(0.05, dt);
+          cameraX += (followTarget.x - cameraX) * lerp;
+          cameraY += (followTarget.y - cameraY) * lerp;
+        }
+      } else if (cameraZoom === 1) {
+        cameraX = canvas.width / 2;
+        cameraY = canvas.height / 2;
+      }
+
       render();
 
       requestAnimationFrame(gameLoop);
@@ -1730,22 +1784,40 @@
 
     canvas.addEventListener('click', (e) => {
       if (mapMakerMode) return; // map maker handles its own clicks
+      const pos = canvasCoords(e);
+
+      // Follow mode: click to select a stickman
+      if (followMode && !followTarget) {
+        const hitRadius = shapeMode === 'circles' ? circleRadius + 4 : 20;
+        for (const s of stickmen) {
+          const dx = pos.x - s.x, dy = pos.y - s.y;
+          if (dx * dx + dy * dy < hitRadius * hitRadius) {
+            followTarget = s;
+            cameraX = s.x;
+            cameraY = s.y;
+            cameraZoom = FOLLOW_ZOOM;
+            updateCanvasCursor();
+            return;
+          }
+        }
+        return;
+      }
+
       if (!placeMode) return;
-      const rect = canvas.getBoundingClientRect();
-      const x = (e.clientX - rect.left) * (canvas.width / rect.width);
-      const y = (e.clientY - rect.top) * (canvas.height / rect.height);
       const n = getSpawnCount();
       const spread = Math.min(40, n * 4);
-      for (let i = 0; i < n; i++) stickmen.push(createStickmanAt(placeColour, x, y, spread));
+      for (let i = 0; i < n; i++) stickmen.push(createStickmanAt(placeColour, pos.x, pos.y, spread));
     });
 
     // ─── Map maker canvas interaction ────────────────────────────────────
     function canvasCoords(e) {
       const rect = canvas.getBoundingClientRect();
-      return {
-        x: (e.clientX - rect.left) * (canvas.width / rect.width),
-        y: (e.clientY - rect.top) * (canvas.height / rect.height),
-      };
+      const sx = (e.clientX - rect.left) * (canvas.width / rect.width);
+      const sy = (e.clientY - rect.top) * (canvas.height / rect.height);
+      // Convert screen coords to world coords (accounting for camera)
+      const wx = (sx - canvas.width / 2) / cameraZoom + cameraX;
+      const wy = (sy - canvas.height / 2) / cameraZoom + cameraY;
+      return { x: wx, y: wy };
     }
 
     canvas.addEventListener('mousedown', (e) => {
@@ -1795,6 +1867,19 @@
       sidesMode = toggleSides.checked;
     });
 
+    // ─── Follow mode ─────────────────────────────────────────────────────
+    const toggleFollow = document.getElementById('toggle-follow');
+    toggleFollow.addEventListener('change', () => {
+      followMode = toggleFollow.checked;
+      if (!followMode) {
+        followTarget = null;
+        cameraZoom = 1;
+        cameraX = canvas.width / 2;
+        cameraY = canvas.height / 2;
+      }
+      updateCanvasCursor();
+    });
+
     // ─── Spawn buttons ──────────────────────────────────────────────────
     document.querySelectorAll('.spawn-btn').forEach(btn => {
       btn.addEventListener('click', () => spawnColour(btn.dataset.colour));
@@ -1807,6 +1892,15 @@
     document.getElementById('clear-btn').addEventListener('click', () => {
       stickmen.length = 0;
       corpses.length = 0;
+      if (followTarget) {
+        followTarget = null;
+        cameraZoom = 1;
+        cameraX = canvas.width / 2;
+        cameraY = canvas.height / 2;
+        followMode = false;
+        toggleFollow.checked = false;
+        updateCanvasCursor();
+      }
     });
 
     // ─── Settings panel ──────────────────────────────────────────────────
@@ -1838,6 +1932,7 @@
     function updateCanvasCursor() {
       if (mapMakerMode) canvas.style.cursor = mapMakerTool === 'eraser' ? 'pointer' : 'crosshair';
       else if (placeMode) canvas.style.cursor = 'crosshair';
+      else if (followMode && !followTarget) canvas.style.cursor = 'pointer';
       else canvas.style.cursor = '';
     }
 
