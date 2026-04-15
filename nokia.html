@@ -1304,6 +1304,26 @@
             const container = document.getElementById('team-overview');
             container.innerHTML = '';
 
+            // Collect all assigned player IDs
+            const assignedIds = new Set();
+            for (const team of teams) team.members.forEach(m => assignedIds.add(m));
+            for (const pid of soloPlayers) assignedIds.add(pid);
+
+            // Unassigned players
+            const unassigned = players.filter(p => !assignedIds.has(p.id));
+            if (unassigned.length > 0) {
+                const div = document.createElement('div');
+                div.className = 'team-card';
+                div.style.borderColor = '#f1c40f';
+                div.style.background = 'rgba(241,196,15,0.05)';
+                div.innerHTML =
+                    '<div class="team-info">' +
+                        '<div class="team-name-display">⏳ Unassigned</div>' +
+                        '<div class="team-members">' + unassigned.map(p => escapeHtml(p.name)).join(', ') + '</div>' +
+                    '</div>';
+                container.appendChild(div);
+            }
+
             for (const team of teams) {
                 const memberNames = team.members.map(m => {
                     const p = players.find(pl => pl.id === m);
@@ -1314,7 +1334,7 @@
                 div.innerHTML =
                     '<div class="team-info">' +
                         '<div class="team-name-display">👥 ' + escapeHtml(team.name) + '</div>' +
-                        '<div class="team-members">' + team.members.length + ' member' + (team.members.length !== 1 ? 's' : '') + ' — ' + memberNames + '</div>' +
+                        '<div class="team-members">' + team.members.length + '/' + maxTeamSize + ' — ' + memberNames + '</div>' +
                     '</div>';
                 container.appendChild(div);
             }
@@ -1330,6 +1350,10 @@
                         '<div class="team-members">Solo</div>' +
                     '</div>';
                 container.appendChild(div);
+            }
+
+            if (teams.length === 0 && soloPlayers.length === 0 && unassigned.length === 0) {
+                container.innerHTML = '<p style="color:#888; text-align:center; padding:16px;">Waiting for players...</p>';
             }
 
             // For guests: update myTeamId from team data
