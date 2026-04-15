@@ -896,8 +896,7 @@
             if (!name) { showToast('Enter your name first!'); return; }
             myName = name;
             isHost = true;
-            myPlayerId = nextPlayerId++;
-            players = [{ name: myName, id: myPlayerId, isLocal: true }];
+            players = [];
 
             partyCode = generatePartyCode();
             const btn = document.getElementById('host-create-btn');
@@ -1099,13 +1098,15 @@
             const ul = document.getElementById('player-list');
             if (!ul) return;
             ul.innerHTML = '';
-            players.forEach((p, i) => {
+            if (players.length === 0) {
                 const li = document.createElement('li');
-                const isMe = p.isLocal || p.id === myPlayerId;
-                li.innerHTML = '<span class="p-name">' + escapeHtml(p.name) +
-                    (i === 0 ? '<span class="p-host">HOST</span>' : '') +
-                    (isMe ? ' <span style="color:#888;font-size:11px;">(you)</span>' : '') +
-                    '</span>';
+                li.innerHTML = '<span class="p-name" style="color:#888;">Waiting for players to join...</span>';
+                ul.appendChild(li);
+                return;
+            }
+            players.forEach((p) => {
+                const li = document.createElement('li');
+                li.innerHTML = '<span class="p-name">' + escapeHtml(p.name) + '</span>';
                 ul.appendChild(li);
             });
         }
@@ -1158,14 +1159,14 @@
             hideAll();
             document.getElementById('teams-overlay').classList.remove('hidden');
 
-            // Show/hide host proceed button
+            // Show/hide host proceed button; hide team choice for host
             document.getElementById('host-proceed-area').style.display = isHost ? '' : 'none';
+            document.getElementById('team-choice-section').style.display = isHost ? 'none' : (assigned ? 'none' : '');
 
             // Reset UI
             document.getElementById('create-team-form').style.display = 'none';
             document.getElementById('join-team-area').style.display = 'none';
-            document.getElementById('my-assignment').style.display = assigned ? '' : 'none';
-            document.getElementById('team-choice-section').style.display = assigned ? 'none' : '';
+            document.getElementById('my-assignment').style.display = (!isHost && assigned) ? '' : 'none';
 
             renderTeamOverview();
         }
@@ -1188,30 +1189,12 @@
             if (!teamName) { showToast('Enter a team name!'); return; }
             if (!password || password.length !== 4) { showToast('Password must be exactly 4 characters!'); return; }
 
-            if (isHost) {
-                // Host creates locally
-                if (teams.some(t => t.name.toLowerCase() === teamName.toLowerCase())) {
-                    showToast('Team name already taken!');
-                    return;
-                }
-                const teamId = nextTeamId++;
-                teams.push({ id: teamId, name: teamName, password: password, leaderPlayerId: myPlayerId, members: [myPlayerId] });
-                soloPlayers = soloPlayers.filter(s => s !== myPlayerId);
-                myTeamId = teamId;
-                iAmSolo = false;
-                assigned = true;
-                broadcastToAll({ type: 'team-update', teams, soloPlayers });
-                showAssignment('You created ' + teamName + '!');
-                showToast(teamName + ' created!');
-            } else {
-                sendMessage({ type: 'create-team', teamName, password });
-                myTeamId = null; // will be set on team-update
-                iAmSolo = false;
-                assigned = true;
-                showAssignment('Creating ' + teamName + '...');
-                // Track which team name we created to find our team on update
-                window._pendingTeamName = teamName;
-            }
+            sendMessage({ type: 'create-team', teamName, password });
+            myTeamId = null;
+            iAmSolo = false;
+            assigned = true;
+            showAssignment('Creating ' + teamName + '...');
+            window._pendingTeamName = teamName;
 
             document.getElementById('create-team-form').style.display = 'none';
             document.getElementById('new-team-name').value = '';
@@ -1278,23 +1261,13 @@
                         return;
                     }
 
-                    if (isHost) {
-                        // Host joins locally
-                        for (const t of teams) t.members = t.members.filter(m => m !== myPlayerId);
-                        soloPlayers = soloPlayers.filter(s => s !== myPlayerId);
-                        team.members.push(myPlayerId);
-                        myTeamId = team.id;
-                        iAmSolo = false;
-                        assigned = true;
-                        broadcastToAll({ type: 'team-update', teams, soloPlayers });
-                        showAssignment('Joined ' + team.name + '!');
-                    } else {
-                        sendMessage({ type: 'join-team', teamId: team.id });
-                        myTeamId = team.id;
-                        iAmSolo = false;
-                        assigned = true;
-                        showAssignment('Joined ' + team.name + '!');
-                    }
+                    if (isHost) return; // host doesn't play
+
+                    sendMessage({ type: 'join-team', teamId: team.id });
+                    myTeamId = team.id;
+                    iAmSolo = false;
+                    assigned = true;
+                    showAssignment('Joined ' + team.name + '!');
 
                     document.getElementById('join-team-area').style.display = 'none';
                 });
@@ -1303,21 +1276,11 @@
 
         // Go Solo
         document.getElementById('btn-go-solo').addEventListener('click', () => {
-            if (isHost) {
-                for (const t of teams) t.members = t.members.filter(m => m !== myPlayerId);
-                if (!soloPlayers.includes(myPlayerId)) soloPlayers.push(myPlayerId);
-                myTeamId = null;
-                iAmSolo = true;
-                assigned = true;
-                broadcastToAll({ type: 'team-update', teams, soloPlayers });
-                showAssignment('Going solo!');
-            } else {
-                sendMessage({ type: 'go-solo' });
-                myTeamId = null;
-                iAmSolo = true;
-                assigned = true;
-                showAssignment('Going solo!');
-            }
+            sendMessage({ type: 'go-solo' });
+            myTeamId = null;
+            iAmSolo = true;
+            assigned = true;
+            showAssignment('Going solo!');
         });
 
         function showAssignment(text) {
