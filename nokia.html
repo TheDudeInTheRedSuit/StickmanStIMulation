@@ -768,8 +768,10 @@
             <h2>Top 5</h2>
             <div class="scoreboard" id="scoreboard"></div>
 
-            <h2>Full Standings</h2>
-            <div class="scoreboard" id="full-standings"></div>
+            <div id="my-position-area" style="display:none;">
+                <h2>Your Position</h2>
+                <div class="scoreboard" id="my-position"></div>
+            </div>
 
             <!-- Host controls -->
             <div id="sb-host-controls" style="display:none;">
@@ -950,6 +952,7 @@
                     soloPlayers = soloPlayers.filter(s => s !== pid);
                     renderPlayerList();
                     updatePeerCount();
+                    renderTeamOverview();
                     sendMessage({ type: 'player-list', players });
                     if (player) showToast(player.name + ' disconnected');
                 }
@@ -969,6 +972,7 @@
                 soloPlayers = soloPlayers.filter(s => s !== pid);
                 broadcastToAll({ type: 'team-update', teams, soloPlayers });
                 showToast(teamName + ' created!');
+                renderTeamOverview();
             }
 
             if (msg.type === 'join-team') {
@@ -987,6 +991,7 @@
                 broadcastToAll({ type: 'team-update', teams, soloPlayers });
                 const player = players.find(p => p.id === pid);
                 if (player) showToast(player.name + ' joined ' + team.name);
+                renderTeamOverview();
             }
 
             if (msg.type === 'go-solo') {
@@ -995,6 +1000,9 @@
                 for (const t of teams) t.members = t.members.filter(m => m !== pid);
                 if (!soloPlayers.includes(pid)) soloPlayers.push(pid);
                 broadcastToAll({ type: 'team-update', teams, soloPlayers });
+                const player = players.find(p => p.id === pid);
+                if (player) showToast(player.name + ' went solo');
+                renderTeamOverview();
             }
         }
 
@@ -1462,19 +1470,43 @@
                 boardEl.appendChild(row);
             });
 
-            // Full standings
-            const fullEl = document.getElementById('full-standings');
-            fullEl.innerHTML = '';
-            entries.forEach((e, i) => {
-                const row = document.createElement('div');
-                row.className = 'scoreboard-row';
-                const icon = e.type === 'team' ? '👥 ' : '🧍 ';
-                row.innerHTML =
-                    '<span class="rank">' + (i < 3 ? medals[i] : (i + 1) + '.') + '</span>' +
-                    '<span class="s-name">' + icon + escapeHtml(e.name) + '</span>' +
-                    '<span class="s-score">' + e.score + ' pts</span>';
-                fullEl.appendChild(row);
-            });
+            // Your Position (guests only — find their team/solo entry)
+            const posArea = document.getElementById('my-position-area');
+            const posEl = document.getElementById('my-position');
+            posEl.innerHTML = '';
+            if (!isHost && myPlayerId !== null) {
+                let myKey = null;
+                if (iAmSolo) {
+                    myKey = 'solo-' + myPlayerId;
+                } else if (myTeamId !== null) {
+                    myKey = 'team-' + myTeamId;
+                }
+                if (myKey) {
+                    const myIdx = entries.findIndex(e => {
+                        if (e.type === 'solo') return myKey === 'solo-' + myPlayerId && e.name === (players.find(p => p.id === myPlayerId) || {}).name;
+                        if (e.type === 'team') return myKey === 'team-' + myTeamId && e.name === (teams.find(t => t.id === myTeamId) || {}).name;
+                        return false;
+                    });
+                    if (myIdx !== -1) {
+                        const e = entries[myIdx];
+                        const row = document.createElement('div');
+                        row.className = 'scoreboard-row';
+                        const icon = e.type === 'team' ? '👥 ' : '🧍 ';
+                        row.innerHTML =
+                            '<span class="rank">' + (myIdx < 3 ? medals[myIdx] : (myIdx + 1) + '.') + '</span>' +
+                            '<span class="s-name">' + icon + escapeHtml(e.name) + '</span>' +
+                            '<span class="s-score">' + e.score + ' pts</span>';
+                        posEl.appendChild(row);
+                        posArea.style.display = '';
+                    } else {
+                        posArea.style.display = 'none';
+                    }
+                } else {
+                    posArea.style.display = 'none';
+                }
+            } else {
+                posArea.style.display = 'none';
+            }
 
             // Host controls
             document.getElementById('sb-host-controls').style.display = isHost ? '' : 'none';
