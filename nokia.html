@@ -1,0 +1,1588 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nokia Game — Stickman StIMulation</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            background: #0f0f1a;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            color: #e0e0e0;
+        }
+
+        .overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(10px);
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .overlay.hidden {
+            display: none;
+        }
+
+        .panel {
+            background: linear-gradient(145deg, #1a1a2e, #16213e);
+            border: 1px solid #333;
+            border-radius: 16px;
+            padding: 32px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+        }
+
+        .panel h1 {
+            text-align: center;
+            font-size: 28px;
+            margin-bottom: 6px;
+            background: linear-gradient(135deg, #f1c40f, #e74c3c, #3498db, #2ecc71);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .panel h2 {
+            font-size: 18px;
+            margin: 20px 0 10px;
+            color: #f1c40f;
+            border-bottom: 1px solid #333;
+            padding-bottom: 6px;
+        }
+
+        .panel p.subtitle {
+            text-align: center;
+            color: #888;
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+
+        .input-row {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 10px;
+            align-items: center;
+        }
+
+        .input-row input[type="text"],
+        .input-row input[type="number"] {
+            flex: 1;
+            padding: 10px 14px;
+            border: 1px solid #444;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.06);
+            color: #fff;
+            font-size: 15px;
+        }
+
+        .input-row input:focus {
+            outline: none;
+            border-color: #f1c40f;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .party-code-display {
+            text-align: center;
+            padding: 20px;
+            margin: 16px 0;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid #2a2a3e;
+            border-radius: 12px;
+        }
+
+        .party-code {
+            font-size: 48px;
+            font-weight: 900;
+            letter-spacing: 12px;
+            color: #f1c40f;
+            text-shadow: 0 0 20px rgba(241, 196, 15, 0.3);
+            font-family: 'Courier New', monospace;
+            user-select: all;
+        }
+
+        .btn {
+            border: none;
+            border-radius: 8px;
+            padding: 10px 20px;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform .1s, box-shadow .15s;
+        }
+
+        .btn:hover {
+            transform: scale(1.05);
+        }
+
+        .btn:active {
+            transform: scale(0.95);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-gold {
+            background: linear-gradient(135deg, #f1c40f, #e67e22);
+            color: #1a1a2e;
+            box-shadow: 0 0 15px rgba(241, 196, 15, 0.3);
+        }
+
+        .btn-green {
+            background: linear-gradient(135deg, #2ecc71, #27ae60);
+            color: #fff;
+            box-shadow: 0 0 15px rgba(46, 204, 113, 0.3);
+        }
+
+        .btn-red {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            color: #fff;
+        }
+
+        .btn-blue {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: #fff;
+            box-shadow: 0 0 15px rgba(52, 152, 219, 0.3);
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1px solid #555;
+            color: #ccc;
+        }
+
+        .btn-outline:hover {
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .btn-sm {
+            padding: 6px 14px;
+            font-size: 13px;
+        }
+
+        .tab-bar {
+            display: flex;
+            gap: 4px;
+            margin-bottom: 16px;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #333;
+            border-radius: 8px 8px 0 0;
+            background: transparent;
+            color: #888;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background .15s;
+        }
+
+        .tab-btn.active {
+            background: rgba(241, 196, 15, 0.1);
+            border-color: #f1c40f;
+            color: #f1c40f;
+        }
+
+        .tab-btn:hover:not(.active) {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .player-list {
+            list-style: none;
+            margin: 10px 0;
+        }
+
+        .player-list li {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 12px;
+            background: rgba(255, 255, 255, 0.04);
+            border-radius: 8px;
+            margin-bottom: 6px;
+        }
+
+        .player-list li .p-name {
+            font-weight: 600;
+            font-size: 15px;
+        }
+
+        .player-list li .p-host {
+            background: #f1c40f;
+            color: #1a1a2e;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 700;
+            margin-left: 8px;
+        }
+
+        .player-list li .p-info {
+            color: #888;
+            font-size: 13px;
+        }
+
+        .peer-count {
+            font-size: 13px;
+            color: #2ecc71;
+            font-weight: 600;
+        }
+
+        .status-dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 6px;
+        }
+
+        .status-dot.connected {
+            background: #2ecc71;
+        }
+
+        .status-dot.waiting {
+            background: #f1c40f;
+            animation: pulse-live 1.5s ease-in-out infinite;
+        }
+
+        @keyframes pulse-live {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .mode-selector {
+            display: flex;
+            gap: 12px;
+            margin: 16px 0;
+        }
+
+        .mode-card {
+            flex: 1;
+            padding: 20px;
+            border-radius: 12px;
+            border: 2px solid #333;
+            background: rgba(255, 255, 255, 0.03);
+            cursor: pointer;
+            text-align: center;
+            transition: border-color .2s, background .2s, transform .1s;
+        }
+
+        .mode-card:hover {
+            border-color: #48dbfb;
+            background: rgba(72, 219, 251, 0.05);
+            transform: translateY(-2px);
+        }
+
+        .mode-card.selected {
+            border-color: #f1c40f;
+            background: rgba(241, 196, 15, 0.08);
+            box-shadow: 0 0 20px rgba(241, 196, 15, 0.15);
+        }
+
+        .mode-card .mode-icon {
+            font-size: 32px;
+            margin-bottom: 8px;
+        }
+
+        .mode-card .mode-label {
+            font-size: 16px;
+            font-weight: 700;
+        }
+
+        .mode-card .mode-desc {
+            font-size: 12px;
+            color: #888;
+            margin-top: 4px;
+        }
+
+        .team-card {
+            padding: 14px;
+            margin: 8px 0;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid #2a2a3e;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .team-card .team-info {
+            flex: 1;
+        }
+
+        .team-card .team-name-display {
+            font-weight: 700;
+            font-size: 16px;
+        }
+
+        .team-card .team-members {
+            font-size: 12px;
+            color: #888;
+            margin-top: 2px;
+        }
+
+        .team-card .team-actions {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+        }
+
+        .team-card .team-actions input {
+            width: 80px;
+            padding: 6px 8px;
+            border: 1px solid #444;
+            border-radius: 6px;
+            background: rgba(255, 255, 255, 0.06);
+            color: #fff;
+            font-size: 13px;
+            text-transform: uppercase;
+            text-align: center;
+            letter-spacing: 2px;
+        }
+
+        .team-card .team-actions input:focus {
+            outline: none;
+            border-color: #f1c40f;
+        }
+
+        .team-choice-btns {
+            display: flex;
+            gap: 10px;
+            margin: 16px 0;
+            flex-wrap: wrap;
+        }
+
+        .team-choice-btns .btn {
+            flex: 1;
+            min-width: 120px;
+            padding: 14px;
+            font-size: 14px;
+        }
+
+        .create-team-form,
+        .join-team-area {
+            padding: 16px;
+            margin: 12px 0;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid #2a2a3e;
+            border-radius: 10px;
+        }
+
+        .scoreboard {
+            width: 100%;
+            margin: 16px 0;
+        }
+
+        .scoreboard-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 14px;
+            background: rgba(255, 255, 255, 0.04);
+            border-radius: 8px;
+            margin-bottom: 6px;
+        }
+
+        .scoreboard-row .rank {
+            width: 28px;
+            font-weight: 900;
+            color: #f1c40f;
+            font-size: 16px;
+        }
+
+        .scoreboard-row .s-name {
+            flex: 1;
+            font-weight: 600;
+        }
+
+        .scoreboard-row .s-score {
+            font-weight: 700;
+            font-variant-numeric: tabular-nums;
+            font-size: 16px;
+            color: #2ecc71;
+        }
+
+        .score-assign-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 14px;
+            background: rgba(255, 255, 255, 0.04);
+            border-radius: 8px;
+            margin-bottom: 6px;
+        }
+
+        .score-assign-row .sa-name {
+            flex: 1;
+            font-weight: 600;
+            font-size: 15px;
+        }
+
+        .score-assign-row .sa-members {
+            font-size: 12px;
+            color: #888;
+        }
+
+        .score-assign-row input[type="number"] {
+            width: 80px;
+            padding: 8px;
+            border: 1px solid #444;
+            border-radius: 6px;
+            background: rgba(255, 255, 255, 0.06);
+            color: #fff;
+            font-size: 15px;
+            text-align: center;
+        }
+
+        .score-assign-row input[type="number"]:focus {
+            outline: none;
+            border-color: #f1c40f;
+        }
+
+        .game-placeholder {
+            text-align: center;
+            padding: 60px 20px;
+            margin: 20px 0;
+            border: 2px dashed #333;
+            border-radius: 16px;
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .game-placeholder .ph-icon {
+            font-size: 48px;
+            margin-bottom: 12px;
+        }
+
+        .game-placeholder .ph-text {
+            font-size: 18px;
+            color: #666;
+            font-weight: 600;
+        }
+
+        .game-placeholder .ph-sub {
+            font-size: 13px;
+            color: #444;
+            margin-top: 6px;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        .mt-12 {
+            margin-top: 12px;
+        }
+
+        .mt-16 {
+            margin-top: 16px;
+        }
+
+        .w-full {
+            width: 100%;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 70px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(46, 204, 113, 0.9);
+            color: #fff;
+            padding: 8px 20px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            z-index: 300;
+            animation: toast-pop 2.2s ease forwards;
+        }
+
+        @keyframes toast-pop {
+            0% { opacity: 0; transform: translateX(-50%) translateY(10px); }
+            15% { opacity: 1; transform: translateX(-50%) translateY(0); }
+            85% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+
+        .step {
+            padding: 14px;
+            margin: 10px 0;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid #2a2a3e;
+            border-radius: 10px;
+        }
+
+        .step-num {
+            display: inline-block;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: #f1c40f;
+            color: #1a1a2e;
+            text-align: center;
+            line-height: 24px;
+            font-weight: 900;
+            font-size: 13px;
+            margin-right: 8px;
+        }
+
+        .step-label {
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .step p {
+            color: #888;
+            font-size: 13px;
+            margin-top: 6px;
+        }
+
+        .back-link {
+            position: fixed;
+            top: 16px;
+            left: 16px;
+            z-index: 200;
+            text-decoration: none;
+            color: #888;
+            font-size: 14px;
+            font-weight: 600;
+            padding: 6px 12px;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid #333;
+            transition: background .15s, color .15s;
+        }
+
+        .back-link:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+        }
+    </style>
+    <script src="https://unpkg.com/mqtt@5/dist/mqtt.min.js"></script>
+</head>
+
+<body>
+    <a href="/" class="back-link">← Back</a>
+
+    <!-- LOBBY -->
+    <div id="lobby-overlay" class="overlay">
+        <div class="panel">
+            <h1>📱 NOKIA GAME</h1>
+            <p class="subtitle">Create or join a room to play with friends</p>
+
+            <div class="tab-bar">
+                <button class="tab-btn active" data-tab="host">Host Game</button>
+                <button class="tab-btn" data-tab="join">Join Game</button>
+            </div>
+
+            <!-- HOST TAB -->
+            <div id="tab-host">
+                <h2>Your Name</h2>
+                <div class="input-row">
+                    <input type="text" id="host-name-input" placeholder="Enter your name" maxlength="20">
+                </div>
+
+                <div class="text-center mt-16">
+                    <button class="btn btn-gold w-full" id="host-create-btn" style="padding:14px; font-size:16px;">Create Room</button>
+                </div>
+
+                <div id="host-room-area" style="display:none;">
+                    <div class="party-code-display">
+                        <p style="color:#888; font-size:13px; margin-bottom:8px;">Share this code with friends:</p>
+                        <div class="party-code" id="party-code-display">&middot;&middot;&middot;&middot;</div>
+                        <button class="btn btn-outline btn-sm mt-12" id="copy-code-btn">&#128203; Copy Code</button>
+                    </div>
+
+                    <h2>Players <span class="peer-count" id="peer-count">(1 player)</span></h2>
+                    <ul class="player-list" id="player-list"></ul>
+
+                    <h2>Game Mode</h2>
+                    <div class="mode-selector">
+                        <div class="mode-card" data-mode="teams" id="mode-teams">
+                            <div class="mode-icon">👥</div>
+                            <div class="mode-label">Teams</div>
+                            <div class="mode-desc">Players form teams</div>
+                        </div>
+                        <div class="mode-card" data-mode="solos" id="mode-solos">
+                            <div class="mode-icon">🧍</div>
+                            <div class="mode-label">Solos</div>
+                            <div class="mode-desc">Every player for themselves</div>
+                        </div>
+                    </div>
+
+                    <div id="team-size-area" style="display:none;">
+                        <h2>Max Team Size</h2>
+                        <div class="input-row">
+                            <input type="number" id="max-team-size" value="4" min="2" max="50" step="1">
+                        </div>
+                    </div>
+
+                    <div class="text-center mt-16">
+                        <button class="btn btn-green w-full" id="start-game-btn" disabled style="padding:14px; font-size:16px;">Start Game</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- JOIN TAB -->
+            <div id="tab-join" style="display:none;">
+                <h2>Your Name</h2>
+                <div class="input-row">
+                    <input type="text" id="join-name-input" placeholder="Enter your name" maxlength="20">
+                </div>
+
+                <h2>Party Code</h2>
+                <div class="input-row">
+                    <input type="text" id="join-code-input" placeholder="XXXX" maxlength="4"
+                        style="text-transform:uppercase; text-align:center; font-size:24px; font-weight:900; letter-spacing:8px;">
+                </div>
+
+                <div class="text-center mt-12">
+                    <button class="btn btn-gold w-full" id="join-btn" style="padding:14px; font-size:16px;">Join Game</button>
+                </div>
+
+                <div id="join-status" style="display:none;">
+                    <div class="step">
+                        <span class="step-num" style="background:#2ecc71;">&#10003;</span>
+                        <span class="step-label">Connected!</span>
+                        <p><span class="status-dot connected"></span>Waiting for the host to start the game...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TEAM FORMATION -->
+    <div id="teams-overlay" class="overlay hidden">
+        <div class="panel" style="max-width:650px;">
+            <h1>TEAM FORMATION</h1>
+            <p class="subtitle">Create a team, join one, or go solo</p>
+
+            <div id="team-choice-section">
+                <div class="team-choice-btns">
+                    <button class="btn btn-green" id="btn-create-team">🏗️ Create Team</button>
+                    <button class="btn btn-blue" id="btn-join-team">🤝 Join Team</button>
+                    <button class="btn btn-outline" id="btn-go-solo">🧍 Go Solo</button>
+                </div>
+            </div>
+
+            <!-- Create Team Form -->
+            <div id="create-team-form" class="create-team-form" style="display:none;">
+                <h2 style="margin-top:0;">Create Your Team</h2>
+                <div class="input-row">
+                    <input type="text" id="new-team-name" placeholder="Team name" maxlength="20">
+                </div>
+                <div class="input-row">
+                    <input type="text" id="new-team-password" placeholder="4-char password" maxlength="4"
+                        style="text-transform:uppercase; text-align:center; font-size:18px; font-weight:700; letter-spacing:4px;">
+                </div>
+                <div class="text-center mt-12">
+                    <button class="btn btn-green" id="confirm-create-team">Create Team</button>
+                    <button class="btn btn-outline btn-sm" id="cancel-create-team" style="margin-left:8px;">Cancel</button>
+                </div>
+            </div>
+
+            <!-- Join Team Area -->
+            <div id="join-team-area" class="join-team-area" style="display:none;">
+                <h2 style="margin-top:0;">Join a Team</h2>
+                <div id="joinable-teams-list"></div>
+                <div class="text-center mt-12">
+                    <button class="btn btn-outline btn-sm" id="cancel-join-team">Cancel</button>
+                </div>
+            </div>
+
+            <!-- Current Assignment -->
+            <div id="my-assignment" style="display:none; margin-top:16px;">
+                <div class="step" style="border-color:#2ecc71; background:rgba(46,204,113,0.06);">
+                    <span class="step-num" style="background:#2ecc71;">✓</span>
+                    <span class="step-label" id="assignment-text">You're set!</span>
+                    <p><span class="status-dot waiting"></span>Waiting for the host to start...</p>
+                </div>
+            </div>
+
+            <h2>Teams & Players</h2>
+            <div id="team-overview"></div>
+
+            <!-- Host-only: proceed button -->
+            <div id="host-proceed-area" style="display:none;">
+                <div class="text-center mt-16">
+                    <button class="btn btn-gold w-full" id="proceed-to-game-btn" style="padding:14px; font-size:16px;">Start Round</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- GAME AREA -->
+    <div id="game-overlay" class="overlay hidden">
+        <div class="panel" style="max-width:700px;">
+            <h1>ROUND <span id="round-number">1</span></h1>
+            <p class="subtitle" id="game-mode-label">Solos Mode</p>
+
+            <div class="game-placeholder">
+                <div class="ph-icon">🎮</div>
+                <div class="ph-text">Game will appear here</div>
+                <div class="ph-sub">Future games will plug into the scoring system</div>
+            </div>
+
+            <!-- Host: Score Assignment -->
+            <div id="score-assignment" style="display:none;">
+                <h2>Assign Points</h2>
+                <div id="score-rows"></div>
+                <div class="text-center mt-16">
+                    <button class="btn btn-gold w-full" id="submit-scores-btn" style="padding:14px; font-size:16px;">Submit Scores</button>
+                </div>
+            </div>
+
+            <!-- Guest: Waiting -->
+            <div id="guest-waiting-scores" style="display:none;">
+                <div class="step">
+                    <span class="step-num" style="background:#f1c40f;">⏳</span>
+                    <span class="step-label">Waiting for host to assign scores...</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SCOREBOARD -->
+    <div id="scoreboard-overlay" class="overlay hidden">
+        <div class="panel" style="max-width:550px;">
+            <h1>🏆 SCOREBOARD</h1>
+            <p class="subtitle">Round <span id="sb-round-number">1</span> Results</p>
+
+            <h2>Top 5</h2>
+            <div class="scoreboard" id="scoreboard"></div>
+
+            <h2>Full Standings</h2>
+            <div class="scoreboard" id="full-standings"></div>
+
+            <!-- Host controls -->
+            <div id="sb-host-controls" style="display:none;">
+                <div style="display:flex; gap:10px; margin-top:20px;">
+                    <button class="btn btn-gold" id="next-round-btn" style="flex:1; padding:14px; font-size:16px;">Next Round</button>
+                    <button class="btn btn-red" id="back-lobby-btn" style="padding:14px; font-size:16px;">Lobby</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ═══════════════════════════════════════════════════════════════
+        // MULTIPLAYER (MQTT – serverless relay via public broker)
+        // ═══════════════════════════════════════════════════════════════
+        const MQTT_BROKERS = [
+            'wss://broker.hivemq.com:8884/mqtt',
+            'wss://broker.emqx.io:8084/mqtt',
+        ];
+        const TOPIC_PREFIX = 'nokia/';
+
+        let players = [];
+        let currentRound = 1;
+        let isHost = false;
+        let myName = '';
+        let myPlayerId = null;
+        let nextPlayerId = 0;
+        let mqttClient = null;
+        let myClientId = 'nk-' + Math.random().toString(36).slice(2, 10);
+        let partyCode = '';
+        let playerClients = {};
+
+        let gameMode = null; // 'teams' or 'solos'
+        let maxTeamSize = 4;
+        let teams = []; // { id, name, password, leaderPlayerId, members: [playerId, ...] }
+        let nextTeamId = 0;
+        let soloPlayers = []; // [playerId, ...]
+        let scores = {}; // keyed by teamId or 'solo-{playerId}'
+        let myTeamId = null;
+        let iAmSolo = false;
+        let assigned = false; // whether I've chosen a team/solo
+
+        function generatePartyCode() {
+            const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+            let code = '';
+            for (let i = 0; i < 4; i++) code += chars[Math.floor(Math.random() * chars.length)];
+            return code;
+        }
+
+        // ─── MQTT CONNECTION ─────────────────────────────────────
+        function connectToBroker(code) {
+            return new Promise((resolve, reject) => {
+                const topic = TOPIC_PREFIX + code;
+                let brokerIdx = 0;
+                let settled = false;
+
+                function tryNext() {
+                    if (brokerIdx >= MQTT_BROKERS.length) {
+                        if (!settled) { settled = true; reject(new Error('All brokers failed')); }
+                        return;
+                    }
+                    if (mqttClient) { try { mqttClient.end(true); } catch {} mqttClient = null; }
+
+                    const timer = setTimeout(() => {
+                        if (!settled) {
+                            try { mqttClient.end(true); } catch {}
+                            brokerIdx++;
+                            tryNext();
+                        }
+                    }, 6000);
+
+                    mqttClient = mqtt.connect(MQTT_BROKERS[brokerIdx], {
+                        clientId: myClientId + '-' + Date.now(),
+                        clean: true,
+                        connectTimeout: 5000,
+                        reconnectPeriod: 3000,
+                        will: {
+                            topic: topic,
+                            payload: JSON.stringify({ type: 'leave', _from: myClientId }),
+                            qos: 1,
+                            retain: false,
+                        },
+                    });
+
+                    mqttClient.on('connect', () => {
+                        clearTimeout(timer);
+                        mqttClient.subscribe(topic, { qos: 1 }, (err) => {
+                            if (err) { brokerIdx++; tryNext(); }
+                            else if (!settled) { settled = true; resolve(); }
+                        });
+                    });
+
+                    mqttClient.on('error', () => {});
+
+                    mqttClient.on('message', (t, payload) => {
+                        try {
+                            const msg = JSON.parse(payload.toString());
+                            if (msg._from === myClientId) return;
+                            if (isHost) handleHostMsg(msg);
+                            else handleGuestMsg(msg);
+                        } catch {}
+                    });
+
+                    mqttClient.on('offline', () => {
+                        showToast('Connection lost, reconnecting...');
+                    });
+                }
+
+                tryNext();
+            });
+        }
+
+        function sendMessage(msg) {
+            if (!mqttClient || !mqttClient.connected) return;
+            msg._from = myClientId;
+            mqttClient.publish(TOPIC_PREFIX + partyCode, JSON.stringify(msg), { qos: 1, retain: false });
+        }
+
+        function broadcastToAll(msg) { sendMessage(msg); }
+
+        // ─── HOST FLOW ───────────────────────────────────────────
+        async function hostCreateRoom() {
+            const name = document.getElementById('host-name-input').value.trim();
+            if (!name) { showToast('Enter your name first!'); return; }
+            myName = name;
+            isHost = true;
+            myPlayerId = nextPlayerId++;
+            players = [{ name: myName, id: myPlayerId, isLocal: true }];
+
+            partyCode = generatePartyCode();
+            const btn = document.getElementById('host-create-btn');
+            btn.disabled = true;
+            btn.textContent = 'Creating room...';
+
+            try {
+                await connectToBroker(partyCode);
+                document.getElementById('party-code-display').textContent = partyCode;
+                btn.style.display = 'none';
+                document.getElementById('host-room-area').style.display = '';
+                renderPlayerList();
+                updatePeerCount();
+                showToast('Room created!');
+            } catch {
+                btn.disabled = false;
+                btn.textContent = 'Create Room';
+                showToast('Could not connect — try again');
+            }
+        }
+
+        function handleHostMsg(msg) {
+            if (!msg || typeof msg.type !== 'string') return;
+
+            if (msg.type === 'join') {
+                const name = String(msg.name || '').slice(0, 20);
+                if (!name || players.some(p => p.name === name)) {
+                    sendMessage({ type: 'error', msg: 'Name already taken', _to: msg._from });
+                    return;
+                }
+                const pid = nextPlayerId++;
+                playerClients[msg._from] = pid;
+                players.push({ name, id: pid, isLocal: false, clientId: msg._from });
+                renderPlayerList();
+                updatePeerCount();
+                sendMessage({ type: 'joined', playerId: pid, players, round: currentRound, _to: msg._from });
+                sendMessage({ type: 'player-list', players });
+                showToast(name + ' joined!');
+            }
+
+            if (msg.type === 'leave') {
+                const pid = playerClients[msg._from];
+                if (pid !== undefined) {
+                    const player = players.find(p => p.id === pid);
+                    players = players.filter(p => p.id !== pid);
+                    delete playerClients[msg._from];
+                    // Remove from teams/solos
+                    for (const t of teams) {
+                        t.members = t.members.filter(m => m !== pid);
+                    }
+                    soloPlayers = soloPlayers.filter(s => s !== pid);
+                    renderPlayerList();
+                    updatePeerCount();
+                    sendMessage({ type: 'player-list', players });
+                    if (player) showToast(player.name + ' disconnected');
+                }
+            }
+
+            if (msg.type === 'create-team') {
+                const teamName = String(msg.teamName || '').slice(0, 20);
+                const password = String(msg.password || '').slice(0, 4).toUpperCase();
+                const pid = playerClients[msg._from];
+                if (!teamName || !password || password.length !== 4 || pid === undefined) return;
+                if (teams.some(t => t.name.toLowerCase() === teamName.toLowerCase())) {
+                    sendMessage({ type: 'error', msg: 'Team name already taken', _to: msg._from });
+                    return;
+                }
+                const teamId = nextTeamId++;
+                teams.push({ id: teamId, name: teamName, password: password, leaderPlayerId: pid, members: [pid] });
+                soloPlayers = soloPlayers.filter(s => s !== pid);
+                broadcastToAll({ type: 'team-update', teams, soloPlayers });
+                showToast(teamName + ' created!');
+            }
+
+            if (msg.type === 'join-team') {
+                const pid = playerClients[msg._from];
+                if (pid === undefined) return;
+                const team = teams.find(t => t.id === msg.teamId);
+                if (!team) { sendMessage({ type: 'error', msg: 'Team not found', _to: msg._from }); return; }
+                if (team.members.length >= maxTeamSize) {
+                    sendMessage({ type: 'error', msg: 'Team is full', _to: msg._from });
+                    return;
+                }
+                // Remove from any existing team
+                for (const t of teams) t.members = t.members.filter(m => m !== pid);
+                soloPlayers = soloPlayers.filter(s => s !== pid);
+                team.members.push(pid);
+                broadcastToAll({ type: 'team-update', teams, soloPlayers });
+                const player = players.find(p => p.id === pid);
+                if (player) showToast(player.name + ' joined ' + team.name);
+            }
+
+            if (msg.type === 'go-solo') {
+                const pid = playerClients[msg._from];
+                if (pid === undefined) return;
+                for (const t of teams) t.members = t.members.filter(m => m !== pid);
+                if (!soloPlayers.includes(pid)) soloPlayers.push(pid);
+                broadcastToAll({ type: 'team-update', teams, soloPlayers });
+            }
+        }
+
+        function updatePeerCount() {
+            const n = players.length;
+            document.getElementById('peer-count').textContent = '(' + n + ' player' + (n !== 1 ? 's' : '') + ')';
+        }
+
+        // ─── GUEST FLOW ──────────────────────────────────────────
+        async function guestJoinRoom() {
+            const name = document.getElementById('join-name-input').value.trim();
+            if (!name) { showToast('Enter your name first!'); return; }
+            myName = name;
+            const code = document.getElementById('join-code-input').value.trim().toUpperCase();
+            if (!code || code.length !== 4) { showToast('Enter a 4-character party code!'); return; }
+
+            const btn = document.getElementById('join-btn');
+            btn.disabled = true;
+            btn.textContent = 'Connecting...';
+            partyCode = code;
+
+            try {
+                await connectToBroker(code);
+                sendMessage({ type: 'join', name: myName });
+
+                const joinTimeout = setTimeout(() => {
+                    if (myPlayerId === null) {
+                        btn.disabled = false;
+                        btn.textContent = 'Join Game';
+                        showToast('No host found — check the code and try again');
+                        if (mqttClient) { mqttClient.end(); mqttClient = null; }
+                    }
+                }, 10000);
+                window._joinTimeout = joinTimeout;
+            } catch {
+                btn.disabled = false;
+                btn.textContent = 'Join Game';
+                showToast('Connection failed — try again');
+            }
+        }
+
+        function handleGuestMsg(msg) {
+            if (!msg || typeof msg.type !== 'string') return;
+            if (msg._to && msg._to !== myClientId) return;
+
+            if (msg.type === 'joined') {
+                if (window._joinTimeout) { clearTimeout(window._joinTimeout); window._joinTimeout = null; }
+                myPlayerId = msg.playerId;
+                players = msg.players;
+                currentRound = msg.round;
+                document.getElementById('join-btn').style.display = 'none';
+                document.getElementById('join-status').style.display = '';
+                showToast('Connected! Waiting for host...');
+            }
+            if (msg.type === 'error') showToast(msg.msg || 'Error');
+            if (msg.type === 'player-list') players = msg.players;
+            if (msg.type === 'start-teams') {
+                gameMode = 'teams';
+                maxTeamSize = msg.maxTeamSize || 4;
+                teams = msg.teams || [];
+                soloPlayers = msg.soloPlayers || [];
+                assigned = false;
+                myTeamId = null;
+                iAmSolo = false;
+                showTeamFormation();
+            }
+            if (msg.type === 'start-solos') {
+                gameMode = 'solos';
+                assigned = false;
+                showGameArea();
+            }
+            if (msg.type === 'team-update') {
+                teams = msg.teams;
+                soloPlayers = msg.soloPlayers;
+                renderTeamOverview();
+            }
+            if (msg.type === 'start-round') {
+                currentRound = msg.round;
+                teams = msg.teams || teams;
+                soloPlayers = msg.soloPlayers || soloPlayers;
+                scores = msg.scores || scores;
+                showGameArea();
+            }
+            if (msg.type === 'scores-assigned') {
+                scores = msg.scores;
+                currentRound = msg.round;
+                showScoreboard();
+            }
+            if (msg.type === 'next-round') {
+                currentRound = msg.round;
+                scores = msg.scores || scores;
+                showGameArea();
+            }
+            if (msg.type === 'back-to-lobby') {
+                resetAndBackToLobby();
+            }
+        }
+
+        // ─── PLAYER LIST ─────────────────────────────────────────
+        function renderPlayerList() {
+            const ul = document.getElementById('player-list');
+            if (!ul) return;
+            ul.innerHTML = '';
+            players.forEach((p, i) => {
+                const li = document.createElement('li');
+                const isMe = p.isLocal || p.id === myPlayerId;
+                li.innerHTML = '<span class="p-name">' + escapeHtml(p.name) +
+                    (i === 0 ? '<span class="p-host">HOST</span>' : '') +
+                    (isMe ? ' <span style="color:#888;font-size:11px;">(you)</span>' : '') +
+                    '</span>';
+                ul.appendChild(li);
+            });
+        }
+
+        function escapeHtml(str) {
+            const d = document.createElement('div');
+            d.textContent = str;
+            return d.innerHTML;
+        }
+
+        // ─── MODE SELECTION (HOST) ───────────────────────────────
+        document.querySelectorAll('.mode-card').forEach(card => {
+            card.addEventListener('click', () => {
+                document.querySelectorAll('.mode-card').forEach(c => c.classList.remove('selected'));
+                card.classList.add('selected');
+                gameMode = card.dataset.mode;
+                document.getElementById('team-size-area').style.display = gameMode === 'teams' ? '' : 'none';
+                document.getElementById('start-game-btn').disabled = false;
+            });
+        });
+
+        // ─── START GAME (HOST) ───────────────────────────────────
+        document.getElementById('start-game-btn').addEventListener('click', () => {
+            if (!gameMode) { showToast('Select a game mode!'); return; }
+            if (players.length < 1) { showToast('Need at least 1 player!'); return; }
+
+            if (gameMode === 'teams') {
+                maxTeamSize = parseInt(document.getElementById('max-team-size').value, 10) || 4;
+                teams = [];
+                soloPlayers = [];
+                nextTeamId = 0;
+                assigned = false;
+                myTeamId = null;
+                iAmSolo = false;
+                broadcastToAll({ type: 'start-teams', maxTeamSize, teams, soloPlayers });
+                showTeamFormation();
+            } else {
+                // Solos: all players are solo
+                soloPlayers = players.map(p => p.id);
+                teams = [];
+                scores = {};
+                for (const pid of soloPlayers) scores['solo-' + pid] = 0;
+                broadcastToAll({ type: 'start-solos' });
+                showGameArea();
+            }
+        });
+
+        // ─── TEAM FORMATION ──────────────────────────────────────
+        function showTeamFormation() {
+            hideAll();
+            document.getElementById('teams-overlay').classList.remove('hidden');
+
+            // Show/hide host proceed button
+            document.getElementById('host-proceed-area').style.display = isHost ? '' : 'none';
+
+            // Reset UI
+            document.getElementById('create-team-form').style.display = 'none';
+            document.getElementById('join-team-area').style.display = 'none';
+            document.getElementById('my-assignment').style.display = assigned ? '' : 'none';
+            document.getElementById('team-choice-section').style.display = assigned ? 'none' : '';
+
+            renderTeamOverview();
+        }
+
+        // Create Team
+        document.getElementById('btn-create-team').addEventListener('click', () => {
+            document.getElementById('team-choice-section').style.display = 'none';
+            document.getElementById('create-team-form').style.display = '';
+            document.getElementById('join-team-area').style.display = 'none';
+        });
+
+        document.getElementById('cancel-create-team').addEventListener('click', () => {
+            document.getElementById('create-team-form').style.display = 'none';
+            document.getElementById('team-choice-section').style.display = '';
+        });
+
+        document.getElementById('confirm-create-team').addEventListener('click', () => {
+            const teamName = document.getElementById('new-team-name').value.trim();
+            const password = document.getElementById('new-team-password').value.trim().toUpperCase();
+            if (!teamName) { showToast('Enter a team name!'); return; }
+            if (!password || password.length !== 4) { showToast('Password must be exactly 4 characters!'); return; }
+
+            if (isHost) {
+                // Host creates locally
+                if (teams.some(t => t.name.toLowerCase() === teamName.toLowerCase())) {
+                    showToast('Team name already taken!');
+                    return;
+                }
+                const teamId = nextTeamId++;
+                teams.push({ id: teamId, name: teamName, password: password, leaderPlayerId: myPlayerId, members: [myPlayerId] });
+                soloPlayers = soloPlayers.filter(s => s !== myPlayerId);
+                myTeamId = teamId;
+                iAmSolo = false;
+                assigned = true;
+                broadcastToAll({ type: 'team-update', teams, soloPlayers });
+                showAssignment('You created ' + teamName + '!');
+                showToast(teamName + ' created!');
+            } else {
+                sendMessage({ type: 'create-team', teamName, password });
+                myTeamId = null; // will be set on team-update
+                iAmSolo = false;
+                assigned = true;
+                showAssignment('Creating ' + teamName + '...');
+                // Track which team name we created to find our team on update
+                window._pendingTeamName = teamName;
+            }
+
+            document.getElementById('create-team-form').style.display = 'none';
+            document.getElementById('new-team-name').value = '';
+            document.getElementById('new-team-password').value = '';
+        });
+
+        // Join Team
+        document.getElementById('btn-join-team').addEventListener('click', () => {
+            document.getElementById('team-choice-section').style.display = 'none';
+            document.getElementById('create-team-form').style.display = 'none';
+            document.getElementById('join-team-area').style.display = '';
+            renderJoinableTeams();
+        });
+
+        document.getElementById('cancel-join-team').addEventListener('click', () => {
+            document.getElementById('join-team-area').style.display = 'none';
+            document.getElementById('team-choice-section').style.display = '';
+        });
+
+        function renderJoinableTeams() {
+            const container = document.getElementById('joinable-teams-list');
+            container.innerHTML = '';
+
+            if (teams.length === 0) {
+                container.innerHTML = '<p style="color:#888; text-align:center; padding:16px;">No teams created yet</p>';
+                return;
+            }
+
+            for (const team of teams) {
+                const card = document.createElement('div');
+                card.className = 'team-card';
+                const memberNames = team.members.map(m => { const p = players.find(pl => pl.id === m); return p ? escapeHtml(p.name) : '?'; }).join(', ');
+                const full = team.members.length >= maxTeamSize;
+                card.innerHTML =
+                    '<div class="team-info">' +
+                        '<div class="team-name-display">' + escapeHtml(team.name) + (full ? ' <span style="color:#e74c3c; font-size:12px;">(FULL)</span>' : '') + '</div>' +
+                        '<div class="team-members">' + team.members.length + '/' + maxTeamSize + ' — ' + memberNames + '</div>' +
+                    '</div>' +
+                    (full ? '' :
+                    '<div class="team-actions">' +
+                        '<input type="text" maxlength="4" placeholder="CODE" data-team-id="' + team.id + '">' +
+                        '<button class="btn btn-blue btn-sm" data-join-team="' + team.id + '">Join</button>' +
+                    '</div>');
+                container.appendChild(card);
+            }
+
+            container.querySelectorAll('[data-join-team]').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const teamId = parseInt(btn.dataset.joinTeam, 10);
+                    const input = container.querySelector('input[data-team-id="' + teamId + '"]');
+                    const enteredPassword = (input.value || '').trim().toUpperCase();
+                    if (!enteredPassword || enteredPassword.length !== 4) {
+                        showToast('Enter the 4-character team password!');
+                        return;
+                    }
+                    const team = teams.find(t => t.id === teamId);
+                    if (!team) { showToast('Team not found!'); return; }
+                    if (team.password !== enteredPassword) {
+                        showToast('Wrong password!');
+                        return;
+                    }
+                    if (team.members.length >= maxTeamSize) {
+                        showToast('Team is full!');
+                        return;
+                    }
+
+                    if (isHost) {
+                        // Host joins locally
+                        for (const t of teams) t.members = t.members.filter(m => m !== myPlayerId);
+                        soloPlayers = soloPlayers.filter(s => s !== myPlayerId);
+                        team.members.push(myPlayerId);
+                        myTeamId = team.id;
+                        iAmSolo = false;
+                        assigned = true;
+                        broadcastToAll({ type: 'team-update', teams, soloPlayers });
+                        showAssignment('Joined ' + team.name + '!');
+                    } else {
+                        sendMessage({ type: 'join-team', teamId: team.id });
+                        myTeamId = team.id;
+                        iAmSolo = false;
+                        assigned = true;
+                        showAssignment('Joined ' + team.name + '!');
+                    }
+
+                    document.getElementById('join-team-area').style.display = 'none';
+                });
+            });
+        }
+
+        // Go Solo
+        document.getElementById('btn-go-solo').addEventListener('click', () => {
+            if (isHost) {
+                for (const t of teams) t.members = t.members.filter(m => m !== myPlayerId);
+                if (!soloPlayers.includes(myPlayerId)) soloPlayers.push(myPlayerId);
+                myTeamId = null;
+                iAmSolo = true;
+                assigned = true;
+                broadcastToAll({ type: 'team-update', teams, soloPlayers });
+                showAssignment('Going solo!');
+            } else {
+                sendMessage({ type: 'go-solo' });
+                myTeamId = null;
+                iAmSolo = true;
+                assigned = true;
+                showAssignment('Going solo!');
+            }
+        });
+
+        function showAssignment(text) {
+            assigned = true;
+            document.getElementById('team-choice-section').style.display = 'none';
+            document.getElementById('create-team-form').style.display = 'none';
+            document.getElementById('join-team-area').style.display = 'none';
+            document.getElementById('my-assignment').style.display = '';
+            document.getElementById('assignment-text').textContent = text;
+        }
+
+        function renderTeamOverview() {
+            const container = document.getElementById('team-overview');
+            container.innerHTML = '';
+
+            for (const team of teams) {
+                const memberNames = team.members.map(m => {
+                    const p = players.find(pl => pl.id === m);
+                    return p ? escapeHtml(p.name) + (m === team.leaderPlayerId ? ' ⭐' : '') : '?';
+                }).join(', ');
+                const div = document.createElement('div');
+                div.className = 'team-card';
+                div.innerHTML =
+                    '<div class="team-info">' +
+                        '<div class="team-name-display">👥 ' + escapeHtml(team.name) + '</div>' +
+                        '<div class="team-members">' + team.members.length + ' member' + (team.members.length !== 1 ? 's' : '') + ' — ' + memberNames + '</div>' +
+                    '</div>';
+                container.appendChild(div);
+            }
+
+            for (const pid of soloPlayers) {
+                const p = players.find(pl => pl.id === pid);
+                if (!p) continue;
+                const div = document.createElement('div');
+                div.className = 'team-card';
+                div.innerHTML =
+                    '<div class="team-info">' +
+                        '<div class="team-name-display">🧍 ' + escapeHtml(p.name) + '</div>' +
+                        '<div class="team-members">Solo</div>' +
+                    '</div>';
+                container.appendChild(div);
+            }
+
+            // For guests: update myTeamId from team data
+            if (!isHost && window._pendingTeamName) {
+                const found = teams.find(t => t.members.includes(myPlayerId));
+                if (found) {
+                    myTeamId = found.id;
+                    window._pendingTeamName = null;
+                    showAssignment('You created ' + found.name + '!');
+                }
+            }
+
+            // Update joinable teams if the join area is visible
+            if (document.getElementById('join-team-area').style.display !== 'none') {
+                renderJoinableTeams();
+            }
+        }
+
+        // Host: proceed to game from team formation
+        document.getElementById('proceed-to-game-btn').addEventListener('click', () => {
+            // Build scores object
+            scores = {};
+            for (const team of teams) scores['team-' + team.id] = scores['team-' + team.id] || 0;
+            for (const pid of soloPlayers) scores['solo-' + pid] = scores['solo-' + pid] || 0;
+
+            broadcastToAll({ type: 'start-round', round: currentRound, teams, soloPlayers, scores });
+            showGameArea();
+        });
+
+        // ─── GAME AREA ──────────────────────────────────────────
+        function showGameArea() {
+            hideAll();
+            document.getElementById('game-overlay').classList.remove('hidden');
+            document.getElementById('round-number').textContent = currentRound;
+            document.getElementById('game-mode-label').textContent = gameMode === 'teams' ? 'Teams Mode' : 'Solos Mode';
+
+            if (isHost) {
+                document.getElementById('score-assignment').style.display = '';
+                document.getElementById('guest-waiting-scores').style.display = 'none';
+                renderScoreAssignment();
+            } else {
+                document.getElementById('score-assignment').style.display = 'none';
+                document.getElementById('guest-waiting-scores').style.display = '';
+            }
+        }
+
+        function renderScoreAssignment() {
+            const container = document.getElementById('score-rows');
+            container.innerHTML = '';
+
+            if (gameMode === 'teams') {
+                for (const team of teams) {
+                    const memberNames = team.members.map(m => {
+                        const p = players.find(pl => pl.id === m);
+                        return p ? escapeHtml(p.name) : '?';
+                    }).join(', ');
+                    const row = document.createElement('div');
+                    row.className = 'score-assign-row';
+                    row.innerHTML =
+                        '<div style="flex:1;">' +
+                            '<div class="sa-name">👥 ' + escapeHtml(team.name) + '</div>' +
+                            '<div class="sa-members">' + memberNames + '</div>' +
+                        '</div>' +
+                        '<input type="number" value="0" min="0" data-score-key="team-' + team.id + '">';
+                    container.appendChild(row);
+                }
+            }
+
+            for (const pid of soloPlayers) {
+                const p = players.find(pl => pl.id === pid);
+                if (!p) continue;
+                const row = document.createElement('div');
+                row.className = 'score-assign-row';
+                row.innerHTML =
+                    '<div style="flex:1;">' +
+                        '<div class="sa-name">🧍 ' + escapeHtml(p.name) + '</div>' +
+                    '</div>' +
+                    '<input type="number" value="0" min="0" data-score-key="solo-' + pid + '">';
+                container.appendChild(row);
+            }
+        }
+
+        document.getElementById('submit-scores-btn').addEventListener('click', () => {
+            const inputs = document.querySelectorAll('#score-rows input[data-score-key]');
+            inputs.forEach(input => {
+                const key = input.dataset.scoreKey;
+                const pts = parseInt(input.value, 10) || 0;
+                scores[key] = (scores[key] || 0) + pts;
+            });
+
+            broadcastToAll({ type: 'scores-assigned', scores, round: currentRound });
+            showScoreboard();
+        });
+
+        // ─── SCOREBOARD ─────────────────────────────────────────
+        function showScoreboard() {
+            hideAll();
+            document.getElementById('scoreboard-overlay').classList.remove('hidden');
+            document.getElementById('sb-round-number').textContent = currentRound;
+
+            // Build sorted entries
+            const entries = [];
+            for (const team of teams) {
+                const key = 'team-' + team.id;
+                entries.push({
+                    name: team.name,
+                    score: scores[key] || 0,
+                    type: 'team',
+                    members: team.members.length,
+                });
+            }
+            for (const pid of soloPlayers) {
+                const key = 'solo-' + pid;
+                const p = players.find(pl => pl.id === pid);
+                entries.push({
+                    name: p ? p.name : 'Unknown',
+                    score: scores[key] || 0,
+                    type: 'solo',
+                    members: 1,
+                });
+            }
+
+            entries.sort((a, b) => b.score - a.score);
+
+            // Top 5
+            const top5 = entries.slice(0, 5);
+            const boardEl = document.getElementById('scoreboard');
+            boardEl.innerHTML = '';
+            const medals = ['🥇', '🥈', '🥉'];
+            top5.forEach((e, i) => {
+                const row = document.createElement('div');
+                row.className = 'scoreboard-row';
+                const icon = e.type === 'team' ? '👥 ' : '🧍 ';
+                row.innerHTML =
+                    '<span class="rank">' + (i < 3 ? medals[i] : (i + 1) + '.') + '</span>' +
+                    '<span class="s-name">' + icon + escapeHtml(e.name) + '</span>' +
+                    '<span class="s-score">' + e.score + ' pts</span>';
+                boardEl.appendChild(row);
+            });
+
+            // Full standings
+            const fullEl = document.getElementById('full-standings');
+            fullEl.innerHTML = '';
+            entries.forEach((e, i) => {
+                const row = document.createElement('div');
+                row.className = 'scoreboard-row';
+                const icon = e.type === 'team' ? '👥 ' : '🧍 ';
+                row.innerHTML =
+                    '<span class="rank">' + (i < 3 ? medals[i] : (i + 1) + '.') + '</span>' +
+                    '<span class="s-name">' + icon + escapeHtml(e.name) + '</span>' +
+                    '<span class="s-score">' + e.score + ' pts</span>';
+                fullEl.appendChild(row);
+            });
+
+            // Host controls
+            document.getElementById('sb-host-controls').style.display = isHost ? '' : 'none';
+        }
+
+        // ─── NEXT ROUND / BACK TO LOBBY ─────────────────────────
+        document.getElementById('next-round-btn').addEventListener('click', () => {
+            currentRound++;
+            broadcastToAll({ type: 'next-round', round: currentRound, scores });
+            showGameArea();
+        });
+
+        document.getElementById('back-lobby-btn').addEventListener('click', () => {
+            broadcastToAll({ type: 'back-to-lobby' });
+            resetAndBackToLobby();
+        });
+
+        function resetAndBackToLobby() {
+            hideAll();
+            document.getElementById('lobby-overlay').classList.remove('hidden');
+            currentRound = 1;
+            gameMode = null;
+            teams = [];
+            soloPlayers = [];
+            scores = {};
+            myTeamId = null;
+            iAmSolo = false;
+            assigned = false;
+
+            // Reset mode selection UI
+            document.querySelectorAll('.mode-card').forEach(c => c.classList.remove('selected'));
+            document.getElementById('team-size-area').style.display = 'none';
+            document.getElementById('start-game-btn').disabled = true;
+
+            renderPlayerList();
+        }
+
+        // ─── UTIL ────────────────────────────────────────────────
+        function showToast(msg) {
+            const t = document.createElement('div');
+            t.className = 'toast';
+            t.textContent = msg;
+            document.body.appendChild(t);
+            setTimeout(() => t.remove(), 2200);
+        }
+
+        function hideAll() {
+            document.getElementById('lobby-overlay').classList.add('hidden');
+            document.getElementById('teams-overlay').classList.add('hidden');
+            document.getElementById('game-overlay').classList.add('hidden');
+            document.getElementById('scoreboard-overlay').classList.add('hidden');
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // EVENT WIRING
+        // ═══════════════════════════════════════════════════════════════
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                document.getElementById('tab-host').style.display = btn.dataset.tab === 'host' ? '' : 'none';
+                document.getElementById('tab-join').style.display = btn.dataset.tab === 'join' ? '' : 'none';
+            });
+        });
+
+        document.getElementById('host-create-btn').addEventListener('click', hostCreateRoom);
+        document.getElementById('copy-code-btn').addEventListener('click', () => {
+            navigator.clipboard.writeText(partyCode).then(() => showToast('Code copied!'));
+        });
+        document.getElementById('join-btn').addEventListener('click', guestJoinRoom);
+    </script>
+</body>
+
+</html>
