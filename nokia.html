@@ -643,6 +643,76 @@
             background: rgba(255, 255, 255, 0.1);
             color: #fff;
         }
+
+        /* ─── KART2DE ──────────────────────────────────────────── */
+        .char-select-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin: 16px 0;
+        }
+        .char-card {
+            background: #0f0f1a;
+            border: 2px solid #333;
+            border-radius: 12px;
+            padding: 16px 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: border-color .2s, transform .2s, box-shadow .2s;
+        }
+        .char-card:hover { border-color: #f1c40f; transform: translateY(-2px); }
+        .char-card.selected {
+            border-color: #f1c40f;
+            background: #1a1a2e;
+            box-shadow: 0 0 14px rgba(241,196,15,.45);
+        }
+        .cc-name { font-size: 13px; font-weight: 700; color: #e0e0e0; margin-top: 8px; }
+        .kart-ready-row {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 8px 12px; background: #0f0f1a;
+            border-radius: 8px; margin-bottom: 6px;
+        }
+        .kart-ready-name { font-size: 14px; }
+        .kart-ready-status { font-size: 18px; }
+
+        /* Full-screen race canvas — not using .overlay class intentionally */
+        #kart-game-overlay {
+            position: fixed; inset: 0;
+            background: #0a1f0a;
+            z-index: 200; display: none;
+        }
+        #kart-canvas {
+            position: absolute; inset: 0;
+            width: 100%; height: 100%; display: block;
+        }
+        .k2d-dpad {
+            position: absolute; bottom: 20px; left: 20px;
+            display: grid;
+            grid-template-columns: repeat(3, 54px);
+            grid-template-rows: repeat(3, 54px);
+            gap: 4px; z-index: 210;
+        }
+        .k2d-btn {
+            background: rgba(255,255,255,.15);
+            border: 2px solid rgba(255,255,255,.3);
+            border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 22px; color: #fff;
+            cursor: pointer; user-select: none; -webkit-user-select: none;
+            touch-action: none;
+        }
+        .k2d-btn.pressed { background: rgba(241,196,15,.4); border-color: #f1c40f; }
+        .k2d-item-btn {
+            position: absolute; bottom: 52px; right: 28px;
+            width: 72px; height: 72px;
+            background: rgba(255,255,255,.15);
+            border: 2px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 30px; cursor: pointer; z-index: 210;
+            touch-action: none; user-select: none; -webkit-user-select: none;
+        }
+        .k2d-item-btn:active { background: rgba(241,196,15,.4); border-color: #f1c40f; }
     </style>
     <script src="https://unpkg.com/mqtt@5/dist/mqtt.min.js"></script>
 </head>
@@ -810,6 +880,11 @@
                     <div class="gc-label">67 Spam</div>
                     <div class="gc-desc">Say "six seven" as fast as you can!</div>
                 </div>
+                <div class="game-card" data-game="kart2de">
+                    <div class="gc-icon">🏎️</div>
+                    <div class="gc-label">Kart2DE</div>
+                    <div class="gc-desc">Top-down racing! First to 5 laps wins.</div>
+                </div>
             </div>
 
             <div class="text-center mt-16">
@@ -858,6 +933,74 @@
 
             <h2>Live Scores</h2>
             <div id="host-monitor-rows"></div>
+        </div>
+    </div>
+
+    <!-- KART2DE — CHARACTER SELECT -->
+    <div id="kart-select-overlay" class="overlay hidden">
+        <div class="panel" style="max-width:520px;">
+            <h1>🏎️ KART2DE</h1>
+            <p class="subtitle" id="kart-sel-sub">Pick your racer (30s)</p>
+
+            <!-- Player: character grid -->
+            <div id="kart-char-grid" class="char-select-grid">
+                <div class="char-card" data-char="doge">
+                    <div style="font-size:46px;">🐕</div>
+                    <div class="cc-name">Doge</div>
+                </div>
+                <div class="char-card" data-char="herobrine">
+                    <div style="font-size:46px;">👁️</div>
+                    <div class="cc-name">Herobrine</div>
+                </div>
+                <div class="char-card" data-char="gd">
+                    <div style="font-size:46px;">🟦</div>
+                    <div class="cc-name">GD Cube</div>
+                </div>
+            </div>
+            <div id="kart-sel-player-chosen" style="display:none; text-align:center; padding:14px 0;">
+                <p style="color:#2ecc71; font-size:16px;">✅ Ready! Waiting for host to start the race…</p>
+            </div>
+
+            <!-- Host: readiness list + start button -->
+            <div id="kart-host-ready" style="display:none;">
+                <h2 style="margin-bottom:10px;">Players Ready</h2>
+                <div id="kart-ready-list"></div>
+                <div class="text-center mt-16">
+                    <button class="btn btn-gold w-full" id="kart-start-race-btn" style="padding:14px;font-size:16px;">🏁 Start Race</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- KART2DE — RACE CANVAS (players only, full-screen) -->
+    <div id="kart-game-overlay">
+        <canvas id="kart-canvas"></canvas>
+        <div class="k2d-dpad" id="kart-dpad">
+            <div></div>
+            <div class="k2d-btn" id="k2d-up">▲</div>
+            <div></div>
+            <div class="k2d-btn" id="k2d-left">◄</div>
+            <div></div>
+            <div class="k2d-btn" id="k2d-right">►</div>
+            <div></div>
+            <div class="k2d-btn" id="k2d-down">▼</div>
+            <div></div>
+        </div>
+        <div class="k2d-item-btn" id="k2d-item-btn">🎁</div>
+    </div>
+
+    <!-- KART2DE — HOST RACE MONITOR -->
+    <div id="kart-host-race-overlay" class="overlay hidden">
+        <div class="panel" style="max-width:520px;">
+            <h1>🏎️ KART2DE</h1>
+            <p class="subtitle">Race in progress — Round <span id="kart-host-round">1</span></p>
+            <canvas id="kart-minimap" width="300" height="188"
+                style="display:block;margin:0 auto 20px;border-radius:10px;background:#0a1f0a;border:1px solid #333;"></canvas>
+            <h2 style="margin-bottom:10px;">Standings</h2>
+            <div id="kart-host-standings"></div>
+            <div class="text-center mt-16">
+                <button class="btn" id="kart-force-end-btn" style="padding:10px 24px;background:#c0392b;">⏭️ Force End Race</button>
+            </div>
         </div>
     </div>
 
@@ -1114,6 +1257,47 @@
                     renderHostMonitor();
                 }
             }
+
+            // ── Kart2DE host handlers ──
+            if (msg.type === 'kart2de-char') {
+                const pid = playerClients[msg._from];
+                if (pid !== undefined) {
+                    k2dCharMap[pid] = msg.char;
+                    broadcastToAll({ type: 'kart2de-chars', charMap: k2dCharMap });
+                    k2dUpdateReadyList();
+                }
+            }
+            if (msg.type === 'kart-pos') {
+                const pid = playerClients[msg._from];
+                if (pid !== undefined && k2dKartMap[pid]) {
+                    const seq = msg.seq || 0;
+                    if (seq > (k2dSeqMap[pid] || -1)) {
+                        k2dSeqMap[pid] = seq;
+                        Object.assign(k2dKartMap[pid], {
+                            x: msg.x, y: msg.y, angle: msg.angle,
+                            lap: msg.lap, progress: msg.progress,
+                            spinning: msg.spinning, boosting: msg.boosting,
+                            finished: msg.finished, char: msg.char
+                        });
+                    }
+                }
+            }
+            if (msg.type === 'kart2de-finish') {
+                const pid = playerClients[msg._from];
+                if (pid !== undefined && !k2dFinishOrder.includes(pid)) {
+                    k2dFinishOrder.push(pid);
+                    broadcastToAll({ type: 'kart2de-finish-ack', finishOrder: k2dFinishOrder });
+                    // Start auto-submit timer on first finish
+                    if (k2dFinishOrder.length === 1) {
+                        if (k2dFinishTimerId) clearTimeout(k2dFinishTimerId);
+                        k2dFinishTimerId = setTimeout(() => { if (k2dActive) k2dSubmitScores(); }, K2D_FINISH_TIMEOUT_MS);
+                    }
+                    // All done?
+                    if (k2dFinishOrder.length >= k2dTotalRacers && k2dActive) {
+                        setTimeout(() => k2dSubmitScores(), 3000);
+                    }
+                }
+            }
         }
 
         function updatePeerCount() {
@@ -1209,6 +1393,58 @@
             }
             if (msg.type === 'start-game') {
                 startGameAsPlayer(msg.game);
+            }
+
+            // ── Kart2DE guest handlers ──
+            if (msg.type === 'kart2de-chars') {
+                Object.assign(k2dCharMap, msg.charMap || {});
+                k2dUpdateReadyList();
+            }
+            if (msg.type === 'kart2de-race-start') {
+                k2dClientStartRace(msg.racers, msg.startAt);
+            }
+            if (msg.type === 'kart-pos') {
+                if (!k2dActive) return;
+                const pid2 = msg.playerId;
+                if (pid2 !== undefined && pid2 !== myPlayerId && k2dKartMap[pid2]) {
+                    const seq = msg.seq || 0;
+                    const senderKey = 'g-' + pid2;
+                    if (seq > (k2dSeqMap[senderKey] || -1)) {
+                        k2dSeqMap[senderKey] = seq;
+                        Object.assign(k2dKartMap[pid2], {
+                            x: msg.x, y: msg.y, angle: msg.angle,
+                            lap: msg.lap, progress: msg.progress,
+                            spinning: msg.spinning, boosting: msg.boosting,
+                            finished: msg.finished
+                        });
+                    }
+                }
+            }
+            if (msg.type === 'kart-item-use') {
+                if (!k2dActive) return;
+                if (k2dEventsSeen.has(msg.evtId)) return;
+                k2dEventsSeen.add(msg.evtId);
+                if (msg.item === 'banana') {
+                    k2dBananas.push({ id: msg.id, x: msg.x, y: msg.y });
+                } else if (msg.item === 'shell') {
+                    // Shell fired: apply hit after 0.8s delay
+                    const evtId = msg.evtId;
+                    const targetId = msg.targetId;
+                    setTimeout(() => k2dApplyHit(msg._from, targetId, 'hit-' + evtId), 800);
+                }
+            }
+            if (msg.type === 'kart-banana-hit') {
+                if (!k2dActive) return;
+                if (k2dEventsSeen.has(msg.evtId)) return;
+                k2dEventsSeen.add(msg.evtId);
+                k2dBananas = k2dBananas.filter(b => b.id !== msg.id);
+            }
+            if (msg.type === 'kart-hit') {
+                if (!k2dActive) return;
+                k2dApplyHit(msg._from, msg.targetId, msg.evtId);
+            }
+            if (msg.type === 'kart2de-finish-ack') {
+                k2dFinishOrder = msg.finishOrder || k2dFinishOrder;
             }
             if (msg.type === 'back-to-lobby') {
                 resetAndBackToLobby();
@@ -1571,6 +1807,9 @@
                     }
                 }, 1000);
             }
+            if (game === 'kart2de') {
+                k2dShowCharSelect();
+            }
         }
 
         function startGameAsPlayer(game) {
@@ -1605,6 +1844,9 @@
 
                 // Start speech recognition
                 startSpeechRecognition();
+            }
+            if (game === 'kart2de') {
+                k2dShowCharSelect();
             }
         }
 
@@ -1875,6 +2117,7 @@
         });
 
         function resetAndBackToLobby() {
+            k2dCleanup();
             hideAll();
             document.getElementById('lobby-overlay').classList.remove('hidden');
             currentRound = 1;
@@ -1910,7 +2153,910 @@
             document.getElementById('game-overlay').classList.add('hidden');
             document.getElementById('host-monitor-overlay').classList.add('hidden');
             document.getElementById('scoreboard-overlay').classList.add('hidden');
+            document.getElementById('kart-select-overlay').classList.add('hidden');
+            document.getElementById('kart-host-race-overlay').classList.add('hidden');
+            document.getElementById('kart-game-overlay').style.display = 'none';
         }
+
+        // ═══════════════════════════════════════════════════════════════
+        // KART2DE — TOP-DOWN KART RACING
+        // ═══════════════════════════════════════════════════════════════
+
+        // ── Constants ────────────────────────────────────────────
+        const K2D_W = 800, K2D_H = 500;
+        const K2D_TRACK_HW = 44;          // track half-width in logical px
+        const K2D_TOTAL_LAPS = 5;
+        const K2D_KART_R = 13;            // kart collision/draw radius
+        const K2D_MAX_SPEED = 185;        // px/s
+        const K2D_BOOST_SPEED = 310;
+        const K2D_ACCEL = 140;
+        const K2D_BRAKE = 280;
+        const K2D_TURN = 2.8;             // rad/s
+        const K2D_REV_MAX = 55;
+        const K2D_OFF_FRAC = 0.30;        // off-track speed fraction
+        const K2D_SPIN_MS = 2000;
+        const K2D_BOOST_MS = 3000;
+        const K2D_BOX_RESPAWN_MS = 5000;
+        const K2D_SYNC_MS = 125;          // ~8Hz position broadcast
+        const K2D_FINISH_TIMEOUT_MS = 20000;
+
+        // ── State ─────────────────────────────────────────────────
+        let k2dActive = false;
+        let k2dRaceStarted = false;
+        let k2dRaf = null;
+        let k2dLastTs = 0;
+        let k2dMyKart = null;
+        let k2dKartMap = {};
+        let k2dCharMap = {};
+        let k2dFinishOrder = [];
+        let k2dTotalRacers = 0;
+        let k2dSyncIntervalId = null;
+        let k2dFinishTimerId = null;
+        let k2dBananas = [];
+        let k2dBananaIdCounter = 0;
+        let k2dSeqMap = {};
+        let k2dEventsSeen = new Set();
+        let k2dCountdownEnd = 0;
+        let k2dSelectTimer = null;
+        let k2dSelectCountdown = 30;
+        let k2dLocalSeq = 0;
+        let k2dFinishBannerTs = 0;
+        let k2dBoxes = [];
+        let k2dLine = [];
+        let k2dNormals = [];
+        let k2dGridMap = {};
+        const K2D_CELL = 14;
+        let k2dKeyHandler = null;
+        const k2dKeys = { up: false, down: false, left: false, right: false };
+
+        // 19 control points — 8 distinct turns in an 800×500 space
+        const K2D_CP = [
+            [400, 48], [568, 42], [700, 62], [762, 145], [752, 248],
+            [692, 310], [730, 392], [762, 442], [700, 470], [572, 455],
+            [460, 442], [392, 468], [272, 458], [162, 428], [102, 348],
+            [112, 248], [175, 162], [282, 98], [372, 48]
+        ];
+
+        // ── Track building ────────────────────────────────────────
+        function k2dCR(p0, p1, p2, p3, t) {
+            const t2 = t * t, t3 = t2 * t;
+            return [
+                0.5 * (2*p1[0] + (-p0[0]+p2[0])*t + (2*p0[0]-5*p1[0]+4*p2[0]-p3[0])*t2 + (-p0[0]+3*p1[0]-3*p2[0]+p3[0])*t3),
+                0.5 * (2*p1[1] + (-p0[1]+p2[1])*t + (2*p0[1]-5*p1[1]+4*p2[1]-p3[1])*t2 + (-p0[1]+3*p1[1]-3*p2[1]+p3[1])*t3)
+            ];
+        }
+
+        function k2dBuildTrack() {
+            k2dLine = []; k2dNormals = []; k2dGridMap = {};
+            const pts = K2D_CP, n = pts.length, STEPS = 22;
+            for (let i = 0; i < n - 1; i++) {
+                const p0 = pts[(i - 1 + n) % n], p1 = pts[i], p2 = pts[i + 1], p3 = pts[(i + 2) % n];
+                for (let s = 0; s < STEPS; s++) {
+                    const [x, y] = k2dCR(p0, p1, p2, p3, s / STEPS);
+                    k2dLine.push({ x, y });
+                }
+            }
+            const N = k2dLine.length;
+            for (let i = 0; i < N; i++) {
+                const prev = k2dLine[(i - 1 + N) % N], next = k2dLine[(i + 1) % N];
+                const dx = next.x - prev.x, dy = next.y - prev.y, len = Math.hypot(dx, dy) || 1;
+                k2dNormals.push({ nx: -dy / len, ny: dx / len });
+            }
+            // Rasterise track into coarse grid for on-track detection
+            const HW = K2D_TRACK_HW + 6;
+            for (let i = 0; i < N; i++) {
+                const pt = k2dLine[i], { nx, ny } = k2dNormals[i];
+                for (let t = -1; t <= 1; t += 0.35) {
+                    const gx = Math.floor((pt.x + nx * HW * t) / K2D_CELL);
+                    const gy = Math.floor((pt.y + ny * HW * t) / K2D_CELL);
+                    for (let dx = -1; dx <= 1; dx++)
+                        for (let dy2 = -1; dy2 <= 1; dy2++)
+                            k2dGridMap[(gx + dx) + ',' + (gy + dy2)] = true;
+                }
+            }
+            // Place 6 item boxes evenly around track
+            k2dBoxes = [];
+            const step = Math.floor(N / 6);
+            for (let i = 0; i < 6; i++) {
+                const idx = (step * i + Math.floor(step * 0.5)) % N;
+                k2dBoxes.push({ x: k2dLine[idx].x, y: k2dLine[idx].y, active: true, respawnAt: 0 });
+            }
+        }
+
+        function k2dIsOnTrack(x, y) {
+            return !!k2dGridMap[Math.floor(x / K2D_CELL) + ',' + Math.floor(y / K2D_CELL)];
+        }
+
+        function k2dNearestIdx(x, y) {
+            let best = 0, bestD2 = Infinity;
+            for (let i = 0; i < k2dLine.length; i++) {
+                const dx = k2dLine[i].x - x, dy = k2dLine[i].y - y, d2 = dx*dx + dy*dy;
+                if (d2 < bestD2) { bestD2 = d2; best = i; }
+            }
+            return best;
+        }
+
+        // ── Kart factory ──────────────────────────────────────────
+        function k2dMakeKart(id, name, char, x, y, angle) {
+            return { id, name, char, x, y, angle, speed: 0,
+                lap: 0, cp: 0, progress: 0,
+                spinning: false, spinUntil: 0,
+                boosting: false, boostUntil: 0,
+                item: null, finished: false, finishPos: 0 };
+        }
+
+        // Grid start positions radiating back from start/finish line
+        function k2dStartPositions(count) {
+            const base = k2dLine[0], { nx, ny } = k2dNormals[0];
+            const tx = ny, ty = -nx; // tangent (forward direction)
+            const angle = Math.atan2(ty, tx);
+            const out = [];
+            for (let i = 0; i < count; i++) {
+                const col = i % 2, row = Math.floor(i / 2);
+                out.push({
+                    x: base.x + tx * -(row * 45 + 32) + nx * (col === 0 ? -18 : 18),
+                    y: base.y + ty * -(row * 45 + 32) + ny * (col === 0 ? -18 : 18),
+                    angle
+                });
+            }
+            return out;
+        }
+
+        // ── Physics ───────────────────────────────────────────────
+        function k2dUpdate(dt) {
+            if (!k2dMyKart || !k2dRaceStarted) return;
+            const k = k2dMyKart;
+            if (k.finished) return;
+            const now = performance.now();
+
+            if (k.spinning) {
+                k.angle += 7 * dt;
+                k.speed *= Math.pow(0.80, dt * 60);
+                if (now > k.spinUntil) k.spinning = false;
+                k2dMove(k, dt);
+                return;
+            }
+
+            const onTrack = k2dIsOnTrack(k.x, k.y);
+            const boostActive = k.boosting && now < k.boostUntil;
+            const maxSpd = (boostActive ? K2D_BOOST_SPEED : K2D_MAX_SPEED) * (onTrack ? 1 : K2D_OFF_FRAC);
+
+            if (k2dKeys.up)        k.speed = Math.min(k.speed + K2D_ACCEL * dt, maxSpd);
+            else if (k2dKeys.down) k.speed = k.speed > 0
+                                        ? Math.max(k.speed - K2D_BRAKE * dt, 0)
+                                        : Math.max(k.speed - K2D_ACCEL * dt, -K2D_REV_MAX);
+
+            // dt-based friction (frame-rate independent)
+            k.speed *= Math.pow(0.97, dt * 60);
+            if (!onTrack && k.speed > maxSpd) k.speed = maxSpd;
+
+            const sf = Math.min(Math.abs(k.speed) / K2D_MAX_SPEED, 1);
+            const turn = K2D_TURN * dt * sf * Math.sign(k.speed);
+            if (k2dKeys.left)  k.angle -= turn;
+            if (k2dKeys.right) k.angle += turn;
+
+            k2dMove(k, dt);
+            k2dCheckLap(k);
+            k2dCheckItemPickup(k);
+            k2dCheckBananas(k);
+        }
+
+        function k2dMove(k, dt) {
+            k.x = Math.max(-120, Math.min(K2D_W + 120, k.x + Math.cos(k.angle) * k.speed * dt));
+            k.y = Math.max(-120, Math.min(K2D_H + 120, k.y + Math.sin(k.angle) * k.speed * dt));
+        }
+
+        // ── Lap / checkpoint tracking ─────────────────────────────
+        function k2dCheckLap(k) {
+            const N = k2dLine.length;
+            const idx = k2dNearestIdx(k.x, k.y);
+            const progress = idx / N;
+
+            // Ordered checkpoints: cp 0→1 at 25%, 1→2 at 50%, 2→3 at 75%
+            if (k.cp < 3) {
+                const targetProgress = (k.cp + 1) / 4;
+                if (Math.abs(progress - targetProgress) < 0.10) k.cp++;
+            }
+
+            // Lap counts when progress wraps near start (>80% → <20%) with all 3 CPs hit
+            if (k.cp >= 3 && k.progress > 0.78 && progress < 0.22) {
+                k.lap++;
+                k.cp = 0;
+                if (k.lap >= K2D_TOTAL_LAPS) k2dFinishRace(k);
+            }
+            k.progress = progress;
+        }
+
+        function k2dFinishRace(k) {
+            if (k.finished) return;
+            k.finished = true;
+            k2dFinishOrder.push(k.id);
+            k2dFinishBannerTs = performance.now();
+            sendMessage({ type: 'kart2de-finish', playerId: k.id });
+        }
+
+        // ── Item system ───────────────────────────────────────────
+        function k2dCheckItemPickup(k) {
+            if (k.item !== null) return;
+            const now = Date.now();
+            for (const box of k2dBoxes) {
+                if (!box.active) {
+                    if (now >= box.respawnAt) box.active = true;
+                    continue;
+                }
+                const dx = k.x - box.x, dy = k.y - box.y;
+                if (dx*dx + dy*dy < (K2D_KART_R + 10) ** 2) {
+                    box.active = false;
+                    box.respawnAt = now + K2D_BOX_RESPAWN_MS;
+                    k.item = ['boost', 'banana', 'shell'][Math.floor(Math.random() * 3)];
+                }
+            }
+        }
+
+        function k2dCheckBananas(k) {
+            if (k.spinning || k.finished) return;
+            for (let i = k2dBananas.length - 1; i >= 0; i--) {
+                const b = k2dBananas[i];
+                const dx = k.x - b.x, dy = k.y - b.y;
+                if (dx*dx + dy*dy < (K2D_KART_R + 8) ** 2) {
+                    const evtId = 'bhit-' + b.id;
+                    if (!k2dEventsSeen.has(evtId)) {
+                        k2dEventsSeen.add(evtId);
+                        k2dBananas.splice(i, 1);
+                        sendMessage({ type: 'kart-banana-hit', id: b.id, evtId });
+                        k.spinning = true;
+                        k.spinUntil = performance.now() + K2D_SPIN_MS;
+                    }
+                }
+            }
+        }
+
+        function k2dUseItem() {
+            if (!k2dMyKart || !k2dMyKart.item || !k2dRaceStarted) return;
+            const k = k2dMyKart, item = k.item;
+            k.item = null;
+            if (item === 'boost') {
+                k.boosting = true;
+                k.boostUntil = performance.now() + K2D_BOOST_MS;
+                k.speed = Math.min(k.speed + 90, K2D_BOOST_SPEED);
+            } else if (item === 'banana') {
+                const id = 'bn-' + myClientId + '-' + (k2dBananaIdCounter++);
+                const bx = k.x - Math.cos(k.angle) * (K2D_KART_R + 10);
+                const by = k.y - Math.sin(k.angle) * (K2D_KART_R + 10);
+                k2dBananas.push({ id, x: bx, y: by });
+                sendMessage({ type: 'kart-item-use', item: 'banana', id, x: bx, y: by, evtId: id });
+            } else if (item === 'shell') {
+                const target = k2dFindTargetAhead();
+                if (target) {
+                    const evtId = 'sh-' + myClientId + '-' + Date.now();
+                    sendMessage({ type: 'kart-item-use', item: 'shell', targetId: target.id, evtId });
+                    setTimeout(() => {
+                        k2dApplyHit(target.id, 'hit-' + evtId);
+                        sendMessage({ type: 'kart-hit', targetId: target.id, evtId: 'hit-' + evtId });
+                    }, 800);
+                }
+            }
+        }
+
+        function k2dFindTargetAhead() {
+            let best = null, bestD = Infinity;
+            const k = k2dMyKart;
+            for (const kart of Object.values(k2dKartMap)) {
+                if (kart.id === k.id || kart.finished) continue;
+                const dx = kart.x - k.x, dy = kart.y - k.y;
+                const fwd = Math.cos(k.angle) * dx + Math.sin(k.angle) * dy;
+                const d = Math.hypot(dx, dy);
+                if (fwd > 0 && d < bestD) { bestD = d; best = kart; }
+            }
+            return best;
+        }
+
+        function k2dApplyHit(targetId, evtId) {
+            if (k2dEventsSeen.has(evtId)) return;
+            k2dEventsSeen.add(evtId);
+            const kart = (k2dMyKart && k2dMyKart.id === targetId) ? k2dMyKart : k2dKartMap[targetId];
+            if (!kart || kart.finished) return;
+            kart.spinning = true;
+            kart.spinUntil = performance.now() + K2D_SPIN_MS;
+        }
+
+        // ── Rendering ─────────────────────────────────────────────
+        function k2dGetTransform(cw, ch) {
+            const s = Math.min(cw / K2D_W, ch / K2D_H) * 0.94;
+            return { s, ox: (cw - K2D_W * s) / 2, oy: (ch - K2D_H * s) / 2 };
+        }
+
+        function k2dDrawTrack(ctx) {
+            const N = k2dLine.length;
+            if (N < 2) return;
+            // Grass background
+            ctx.fillStyle = '#2d5a27';
+            ctx.fillRect(-20, -20, K2D_W + 40, K2D_H + 40);
+
+            // Road: build left & right edge arrays
+            const left = [], right = [];
+            for (let i = 0; i < N; i++) {
+                const { x, y } = k2dLine[i], { nx, ny } = k2dNormals[i];
+                left.push([x + nx * K2D_TRACK_HW, y + ny * K2D_TRACK_HW]);
+                right.push([x - nx * K2D_TRACK_HW, y - ny * K2D_TRACK_HW]);
+            }
+            ctx.beginPath();
+            ctx.moveTo(left[0][0], left[0][1]);
+            for (const [x, y] of left) ctx.lineTo(x, y);
+            for (let i = right.length - 1; i >= 0; i--) ctx.lineTo(right[i][0], right[i][1]);
+            ctx.closePath();
+            ctx.fillStyle = '#424242';
+            ctx.fill();
+
+            // White edge dashes
+            ctx.setLineDash([14, 10]);
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = '#ccc';
+            ctx.beginPath();
+            left.forEach(([x, y], i) => i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y));
+            ctx.stroke();
+            ctx.beginPath();
+            right.forEach(([x, y], i) => i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y));
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // Yellow centre dashes
+            ctx.strokeStyle = '#f1c40f';
+            ctx.lineWidth = 1.5;
+            ctx.setLineDash([18, 22]);
+            ctx.beginPath();
+            k2dLine.forEach(({ x, y }, i) => i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y));
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // Start/finish checker
+            const sf = k2dLine[0], sn = k2dNormals[0];
+            ctx.save();
+            ctx.translate(sf.x, sf.y);
+            ctx.rotate(Math.atan2(sn.ny, sn.nx));
+            const sq = 8, cols2 = Math.ceil(K2D_TRACK_HW * 2 / sq);
+            for (let r = 0; r < 2; r++)
+                for (let c = 0; c < cols2; c++) {
+                    ctx.fillStyle = (r + c) % 2 === 0 ? '#fff' : '#000';
+                    ctx.fillRect(-K2D_TRACK_HW + c * sq, r === 0 ? -sq * 2 : 0, sq, sq * 2);
+                }
+            ctx.restore();
+
+            // Item boxes
+            const now = Date.now();
+            for (const box of k2dBoxes) {
+                if (!box.active) continue;
+                const pulse = 0.87 + 0.13 * Math.sin(now / 280);
+                ctx.save();
+                ctx.translate(box.x, box.y);
+                ctx.scale(pulse, pulse);
+                ctx.fillStyle = 'rgba(241,196,15,.88)';
+                ctx.fillRect(-11, -11, 22, 22);
+                ctx.strokeStyle = '#fff'; ctx.lineWidth = 2;
+                ctx.strokeRect(-11, -11, 22, 22);
+                ctx.fillStyle = '#fff'; ctx.font = 'bold 12px Arial';
+                ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                ctx.fillText('?', 0, 0);
+                ctx.restore();
+            }
+
+            // Bananas
+            for (const bn of k2dBananas) {
+                ctx.font = '15px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                ctx.fillText('🍌', bn.x, bn.y);
+            }
+        }
+
+        function k2dDrawKart(ctx, kart, isMe) {
+            ctx.save();
+            ctx.translate(kart.x, kart.y);
+            ctx.rotate(kart.angle + Math.PI / 2);
+            const R = K2D_KART_R;
+
+            // Shadow
+            ctx.beginPath();
+            ctx.ellipse(3, 3, R, R * 0.7, 0, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(0,0,0,.32)'; ctx.fill();
+
+            k2dDrawCharHead(ctx, kart.char, R);
+
+            if (isMe) {
+                ctx.beginPath();
+                ctx.arc(0, 0, R + 3.5, 0, Math.PI * 2);
+                ctx.strokeStyle = '#f1c40f'; ctx.lineWidth = 2.5; ctx.stroke();
+            }
+            if (kart.spinning) {
+                ctx.beginPath();
+                ctx.arc(0, 0, R + 6, 0, Math.PI * 2);
+                ctx.strokeStyle = 'rgba(255,60,60,.65)'; ctx.lineWidth = 2; ctx.stroke();
+            }
+            if (kart.boosting) {
+                ctx.beginPath();
+                ctx.moveTo(-5, R + 2); ctx.lineTo(5, R + 2); ctx.lineTo(0, R + 13);
+                ctx.closePath();
+                ctx.fillStyle = 'rgba(0,200,255,.72)'; ctx.fill();
+            }
+            ctx.restore();
+
+            // Name tag (unrotated)
+            ctx.save();
+            ctx.translate(kart.x, kart.y);
+            const label = kart.name.length > 9 ? kart.name.slice(0, 8) + '…' : kart.name;
+            ctx.font = 'bold 10px Arial'; ctx.textAlign = 'center';
+            ctx.strokeStyle = 'rgba(0,0,0,.8)'; ctx.lineWidth = 3;
+            ctx.strokeText(label, 0, -(K2D_KART_R + 8));
+            ctx.fillStyle = isMe ? '#f1c40f' : '#fff';
+            ctx.fillText(label, 0, -(K2D_KART_R + 8));
+            ctx.restore();
+        }
+
+        function k2dDrawCharHead(ctx, char, R) {
+            if (char === 'doge') {
+                // Ears
+                ctx.beginPath();
+                ctx.ellipse(-R * 0.58, -R * 0.65, R * 0.34, R * 0.48, -0.4, 0, Math.PI * 2);
+                ctx.fillStyle = '#b8936e'; ctx.fill();
+                ctx.beginPath();
+                ctx.ellipse(R * 0.58, -R * 0.65, R * 0.34, R * 0.48, 0.4, 0, Math.PI * 2);
+                ctx.fillStyle = '#b8936e'; ctx.fill();
+                // Head circle
+                ctx.beginPath();
+                ctx.arc(0, 0, R, 0, Math.PI * 2);
+                ctx.fillStyle = '#c8a96e'; ctx.fill();
+                // Eyes
+                ctx.fillStyle = '#222';
+                ctx.beginPath();
+                ctx.arc(-R * 0.30, -R * 0.1, R * 0.15, 0, Math.PI * 2);
+                ctx.arc(R * 0.30, -R * 0.1, R * 0.15, 0, Math.PI * 2);
+                ctx.fill();
+                // Nose
+                ctx.beginPath();
+                ctx.arc(0, R * 0.22, R * 0.12, 0, Math.PI * 2);
+                ctx.fillStyle = '#444'; ctx.fill();
+
+            } else if (char === 'herobrine') {
+                // Pixel Minecraft head
+                const px = R / 4;
+                ctx.fillStyle = '#7a9c7a';
+                ctx.fillRect(-R, -R, R * 2, R * 2);
+                // Forehead shade
+                ctx.fillStyle = '#8aac8a';
+                ctx.fillRect(-R, -R, R * 2, R * 0.45);
+                // Mouth line
+                ctx.fillStyle = '#5a6a5a';
+                ctx.fillRect(-R * 0.5, R * 0.35, R, px * 0.7);
+                // Glowing white eyes (Herobrine's signature)
+                ctx.shadowColor = '#fff'; ctx.shadowBlur = 10;
+                ctx.fillStyle = '#fff';
+                ctx.fillRect(-R * 0.58, -R * 0.18, px * 1.4, px * 1.1);
+                ctx.fillRect(R * 0.18, -R * 0.18, px * 1.4, px * 1.1);
+                ctx.shadowBlur = 0;
+
+            } else { // gd cube
+                // Dark blue square body
+                ctx.fillStyle = '#2244bb';
+                ctx.fillRect(-R, -R, R * 2, R * 2);
+                // Inner border
+                ctx.strokeStyle = '#4466dd'; ctx.lineWidth = 2;
+                ctx.strokeRect(-R + 3, -R + 3, R * 2 - 6, R * 2 - 6);
+                // Yellow star
+                ctx.fillStyle = '#f1c40f';
+                const sp = 5, oR = R * 0.54, iR = R * 0.24;
+                ctx.beginPath();
+                for (let i = 0; i < sp * 2; i++) {
+                    const rad = i % 2 === 0 ? oR : iR;
+                    const ang = i * Math.PI / sp - Math.PI / 2;
+                    i === 0 ? ctx.moveTo(Math.cos(ang) * rad, Math.sin(ang) * rad)
+                             : ctx.lineTo(Math.cos(ang) * rad, Math.sin(ang) * rad);
+                }
+                ctx.closePath(); ctx.fill();
+            }
+        }
+
+        function k2dRender() {
+            const canvas = document.getElementById('kart-canvas');
+            if (!canvas) return;
+            const cw = canvas.width, ch = canvas.height;
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, cw, ch);
+
+            const { s, ox, oy } = k2dGetTransform(cw, ch);
+            ctx.save();
+            ctx.translate(ox, oy);
+            ctx.scale(s, s);
+            k2dDrawTrack(ctx);
+            for (const kart of Object.values(k2dKartMap)) {
+                if (k2dMyKart && kart.id === k2dMyKart.id) continue;
+                k2dDrawKart(ctx, kart, false);
+            }
+            if (k2dMyKart) k2dDrawKart(ctx, k2dMyKart, true);
+            ctx.restore();
+
+            k2dDrawHUD(ctx, cw, ch);
+        }
+
+        function k2dDrawHUD(ctx, cw, ch) {
+            if (!k2dMyKart) return;
+            const k = k2dMyKart;
+            ctx.save();
+
+            // Lap counter
+            const lapText = k.finished
+                ? '🏁 FINISHED!'
+                : 'Lap ' + Math.min(k.lap + 1, K2D_TOTAL_LAPS) + '/' + K2D_TOTAL_LAPS;
+            ctx.font = 'bold 20px Arial'; ctx.textAlign = 'right';
+            ctx.strokeStyle = 'rgba(0,0,0,.85)'; ctx.lineWidth = 4;
+            ctx.strokeText(lapText, cw - 14, 32);
+            ctx.fillStyle = '#fff'; ctx.fillText(lapText, cw - 14, 32);
+
+            // Position indicator
+            const myPos = k2dFinishOrder.indexOf(k.id);
+            if (!k.finished) {
+                const standing = k2dGetStanding();
+                ctx.font = 'bold 16px Arial'; ctx.textAlign = 'right';
+                ctx.strokeText('P' + standing, cw - 14, 56);
+                ctx.fillStyle = '#f1c40f'; ctx.fillText('P' + standing, cw - 14, 56);
+            }
+
+            // Item slot
+            const itemEmoji = k.item ? { boost: '⚡', banana: '🍌', shell: '🔴' }[k.item] : '';
+            const btn = document.getElementById('k2d-item-btn');
+            if (btn) btn.textContent = itemEmoji || '🎁';
+
+            // Countdown
+            const now = performance.now();
+            if (!k2dRaceStarted && k2dCountdownEnd > 0) {
+                const rem = Math.ceil((k2dCountdownEnd - now) / 1000);
+                if (rem > 0) {
+                    ctx.fillStyle = 'rgba(0,0,0,.55)';
+                    ctx.fillRect(0, 0, cw, ch);
+                    ctx.font = 'bold ' + Math.floor(ch * 0.26) + 'px Arial';
+                    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                    ctx.strokeStyle = '#000'; ctx.lineWidth = 10;
+                    ctx.strokeText(rem, cw / 2, ch / 2);
+                    ctx.fillStyle = '#f1c40f'; ctx.fillText(rem, cw / 2, ch / 2);
+                    ctx.textBaseline = 'alphabetic';
+                }
+            }
+            // GO! flash
+            if (k2dRaceStarted && now - k2dCountdownEnd < 1200) {
+                ctx.fillStyle = 'rgba(0,0,0,.3)';
+                ctx.fillRect(0, 0, cw, ch);
+                ctx.font = 'bold ' + Math.floor(ch * 0.22) + 'px Arial';
+                ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                ctx.strokeStyle = '#000'; ctx.lineWidth = 10;
+                ctx.strokeText('GO!', cw / 2, ch / 2);
+                ctx.fillStyle = '#2ecc71'; ctx.fillText('GO!', cw / 2, ch / 2);
+                ctx.textBaseline = 'alphabetic';
+            }
+
+            // Finish banner
+            if (k.finished && now - k2dFinishBannerTs < 5000) {
+                const pos2 = (k2dFinishOrder.indexOf(k.id) + 1) || 1;
+                const suf = ['st','nd','rd'][pos2 - 1] || 'th';
+                ctx.fillStyle = 'rgba(0,0,0,.5)';
+                ctx.fillRect(0, ch * 0.34, cw, ch * 0.30);
+                ctx.font = 'bold ' + Math.floor(ch * 0.10) + 'px Arial';
+                ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                ctx.strokeStyle = '#000'; ctx.lineWidth = 7;
+                ctx.strokeText('🏁 ' + pos2 + suf + ' Place!', cw / 2, ch / 2);
+                ctx.fillStyle = '#f1c40f'; ctx.fillText('🏁 ' + pos2 + suf + ' Place!', cw / 2, ch / 2);
+                ctx.textBaseline = 'alphabetic';
+            }
+            ctx.restore();
+        }
+
+        function k2dGetStanding() {
+            if (!k2dMyKart) return 1;
+            const k = k2dMyKart;
+            let pos = 1;
+            for (const other of Object.values(k2dKartMap)) {
+                if (other.id === k.id) continue;
+                if (other.lap > k.lap || (other.lap === k.lap && other.progress > k.progress)) pos++;
+            }
+            return pos;
+        }
+
+        // ── Mini-map (host overlay) ────────────────────────────────
+        function k2dRenderMinimap() {
+            const canvas = document.getElementById('kart-minimap');
+            if (!canvas || !k2dLine.length) return;
+            const cw = canvas.width, ch = canvas.height;
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, cw, ch);
+            const sx = cw / K2D_W, sy = ch / K2D_H;
+
+            ctx.beginPath();
+            k2dLine.forEach(({ x, y }, i) => i === 0 ? ctx.moveTo(x * sx, y * sy) : ctx.lineTo(x * sx, y * sy));
+            ctx.strokeStyle = '#666'; ctx.lineWidth = K2D_TRACK_HW * 2 * sx;
+            ctx.lineJoin = 'round'; ctx.lineCap = 'round'; ctx.stroke();
+            ctx.strokeStyle = '#888'; ctx.lineWidth = 1; ctx.stroke();
+
+            const charColors = { doge: '#c8a96e', herobrine: '#7a9c7a', gd: '#2244bb' };
+            for (const kart of Object.values(k2dKartMap)) {
+                ctx.beginPath();
+                ctx.arc(kart.x * sx, kart.y * sy, 5, 0, Math.PI * 2);
+                ctx.fillStyle = charColors[kart.char] || '#fff'; ctx.fill();
+                ctx.strokeStyle = '#fff'; ctx.lineWidth = 1; ctx.stroke();
+            }
+        }
+
+        function k2dUpdateHostStandings() {
+            const el = document.getElementById('kart-host-standings');
+            if (!el) return;
+            const sorted = Object.values(k2dKartMap).sort((a, b) =>
+                b.lap !== a.lap ? b.lap - a.lap : b.progress - a.progress);
+            el.innerHTML = sorted.map((k, i) => {
+                const lapStr = k.finished ? '🏁 Finished' : 'Lap ' + (k.lap + 1) + '/' + K2D_TOTAL_LAPS;
+                return '<div class="hm-row"><span class="hm-pos">' + (i + 1) + '.</span>' +
+                    '<span class="hm-name">' + escapeHtml(k.name) + '</span>' +
+                    '<span class="hm-count">' + lapStr + '</span></div>';
+            }).join('');
+        }
+
+        // ── Game loop ─────────────────────────────────────────────
+        function k2dLoop(ts) {
+            if (!k2dActive) return;
+            const dt = Math.min((ts - k2dLastTs) / 1000, 0.05);
+            k2dLastTs = ts;
+
+            // Trigger race start when countdown expires
+            if (!k2dRaceStarted && k2dCountdownEnd > 0 && performance.now() >= k2dCountdownEnd) {
+                k2dRaceStarted = true;
+            }
+            k2dUpdate(dt);
+            k2dRender();
+            k2dRaf = requestAnimationFrame(k2dLoop);
+        }
+
+        // ── Input ─────────────────────────────────────────────────
+        function k2dSetupInput() {
+            k2dKeyHandler = (e) => {
+                if (!k2dActive) return;
+                const map = {
+                    ArrowUp:'up', w:'up', W:'up',
+                    ArrowDown:'down', s:'down', S:'down',
+                    ArrowLeft:'left', a:'left', A:'left',
+                    ArrowRight:'right', d:'right', D:'right'
+                };
+                const dir = map[e.key];
+                if (dir) { k2dKeys[dir] = e.type === 'keydown'; e.preventDefault(); }
+                if ((e.key === ' ' || e.key === 'Enter') && e.type === 'keydown') {
+                    k2dUseItem(); e.preventDefault();
+                }
+            };
+            document.addEventListener('keydown', k2dKeyHandler);
+            document.addEventListener('keyup', k2dKeyHandler);
+
+            // D-pad touch/pointer
+            const dirs = { 'k2d-up':'up', 'k2d-down':'down', 'k2d-left':'left', 'k2d-right':'right' };
+            for (const [id, dir] of Object.entries(dirs)) {
+                const el = document.getElementById(id);
+                if (!el) continue;
+                const on = () => { k2dKeys[dir] = true; el.classList.add('pressed'); };
+                const off = () => { k2dKeys[dir] = false; el.classList.remove('pressed'); };
+                el.addEventListener('pointerdown', on);
+                el.addEventListener('pointerup', off);
+                el.addEventListener('pointerleave', off);
+            }
+            const itemBtn = document.getElementById('k2d-item-btn');
+            if (itemBtn) itemBtn.addEventListener('pointerdown', () => k2dUseItem());
+        }
+
+        function k2dTeardownInput() {
+            if (k2dKeyHandler) {
+                document.removeEventListener('keydown', k2dKeyHandler);
+                document.removeEventListener('keyup', k2dKeyHandler);
+                k2dKeyHandler = null;
+            }
+            k2dKeys.up = k2dKeys.down = k2dKeys.left = k2dKeys.right = false;
+        }
+
+        // ── Network sync ──────────────────────────────────────────
+        function k2dStartSync() {
+            k2dSyncIntervalId = setInterval(() => {
+                if (!k2dMyKart || !k2dActive) return;
+                const k = k2dMyKart;
+                k2dLocalSeq++;
+                sendMessage({
+                    type: 'kart-pos', playerId: myPlayerId, seq: k2dLocalSeq,
+                    x: Math.round(k.x * 10) / 10, y: Math.round(k.y * 10) / 10,
+                    angle: Math.round(k.angle * 100) / 100,
+                    lap: k.lap, progress: Math.round(k.progress * 1000) / 1000,
+                    spinning: k.spinning, boosting: k.boosting, finished: k.finished,
+                    char: k.char
+                }, 0); // QoS 0 for position — fire and forget
+            }, K2D_SYNC_MS);
+        }
+
+        function k2dStopSync() {
+            if (k2dSyncIntervalId) { clearInterval(k2dSyncIntervalId); k2dSyncIntervalId = null; }
+        }
+
+        // ── Character select screen ───────────────────────────────
+        function k2dShowCharSelect() {
+            hideAll();
+            document.getElementById('kart-select-overlay').classList.remove('hidden');
+            k2dCharMap = {};
+            if (isHost) {
+                document.getElementById('kart-char-grid').style.display = 'none';
+                document.getElementById('kart-sel-player-chosen').style.display = 'none';
+                document.getElementById('kart-host-ready').style.display = '';
+                document.getElementById('kart-sel-sub').textContent = 'Waiting for players to pick their racer…';
+                k2dUpdateReadyList();
+                document.getElementById('kart-start-race-btn').onclick = k2dHostStartRace;
+            } else {
+                document.getElementById('kart-char-grid').style.display = '';
+                document.getElementById('kart-sel-player-chosen').style.display = 'none';
+                document.getElementById('kart-host-ready').style.display = 'none';
+                document.querySelectorAll('.char-card').forEach(c => c.classList.remove('selected'));
+                k2dSelectCountdown = 30;
+                document.getElementById('kart-sel-sub').textContent = 'Pick your racer (' + k2dSelectCountdown + 's)';
+                k2dSelectTimer = setInterval(() => {
+                    k2dSelectCountdown--;
+                    const subEl = document.getElementById('kart-sel-sub');
+                    if (subEl) subEl.textContent = 'Pick your racer (' + k2dSelectCountdown + 's)';
+                    if (k2dSelectCountdown <= 0) {
+                        clearInterval(k2dSelectTimer);
+                        if (!k2dCharMap[myPlayerId]) k2dPlayerSelectChar('doge');
+                    }
+                }, 1000);
+            }
+        }
+
+        function k2dPlayerSelectChar(char) {
+            clearInterval(k2dSelectTimer);
+            k2dCharMap[myPlayerId] = char;
+            document.querySelectorAll('.char-card').forEach(c => c.classList.toggle('selected', c.dataset.char === char));
+            document.getElementById('kart-char-grid').style.display = 'none';
+            document.getElementById('kart-sel-player-chosen').style.display = '';
+            sendMessage({ type: 'kart2de-char', char, playerId: myPlayerId });
+        }
+
+        function k2dUpdateReadyList() {
+            if (!isHost) return;
+            const el = document.getElementById('kart-ready-list');
+            if (!el) return;
+            const racers = k2dGetAllRacers();
+            el.innerHTML = racers.map(p =>
+                '<div class="kart-ready-row">' +
+                '<span class="kart-ready-name">' + escapeHtml(p.name) + '</span>' +
+                '<span class="kart-ready-status">' + (k2dCharMap[p.id] ? '✅' : '⌛') + '</span>' +
+                '</div>'
+            ).join('');
+        }
+
+        function k2dGetAllRacers() {
+            const out = [];
+            for (const pid of soloPlayers) {
+                const p = players.find(pl => pl.id === pid);
+                if (p) out.push(p);
+            }
+            for (const team of teams)
+                for (const pid of team.members) {
+                    const p = players.find(pl => pl.id === pid);
+                    if (p) out.push(p);
+                }
+            return out;
+        }
+
+        // ── Host starts the race ──────────────────────────────────
+        function k2dHostStartRace() {
+            const racers = k2dGetAllRacers();
+            if (racers.length === 0) { showToast('No players to race!'); return; }
+
+            k2dTotalRacers = racers.length;
+            k2dBuildTrack();
+
+            // Default any non-picker to doge
+            for (const r of racers) if (!k2dCharMap[r.id]) k2dCharMap[r.id] = 'doge';
+
+            const startPos = k2dStartPositions(racers.length);
+            const racerData = racers.map((r, i) => ({
+                id: r.id, name: r.name, char: k2dCharMap[r.id],
+                x: startPos[i].x, y: startPos[i].y, angle: startPos[i].angle
+            }));
+
+            const startAt = Date.now() + 4000; // all clients sync to this timestamp
+
+            broadcastToAll({ type: 'kart2de-race-start', racers: racerData, startAt, round: currentRound });
+
+            // Host shows monitor (no canvas racing)
+            hideAll();
+            document.getElementById('kart-host-race-overlay').classList.remove('hidden');
+            document.getElementById('kart-host-round').textContent = currentRound;
+
+            k2dActive = true;
+            k2dFinishOrder = [];
+            k2dKartMap = {};
+            k2dSeqMap = {};
+            for (const rd of racerData) k2dKartMap[rd.id] = k2dMakeKart(rd.id, rd.name, rd.char, rd.x, rd.y, rd.angle);
+
+            // Host uses a lightweight animation loop just for the minimap
+            k2dLastTs = performance.now();
+            k2dRaf = requestAnimationFrame(function hostLoop(ts) {
+                if (!k2dActive) return;
+                k2dRenderMinimap();
+                k2dUpdateHostStandings();
+                k2dRaf = requestAnimationFrame(hostLoop);
+            });
+
+            // 3-minute hard cap
+            k2dFinishTimerId = setTimeout(() => { if (k2dActive) k2dSubmitScores(); }, 180000);
+        }
+
+        // ── Client receives race-start ────────────────────────────
+        function k2dClientStartRace(racerData, startAt) {
+            k2dBuildTrack();
+            k2dActive = true;
+            k2dRaceStarted = false;
+            k2dFinishOrder = [];
+            k2dBananas = [];
+            k2dEventsSeen = new Set();
+            k2dSeqMap = {};
+            k2dLocalSeq = 0;
+            k2dFinishBannerTs = 0;
+            k2dMyKart = null;
+            k2dKartMap = {};
+
+            for (const rd of racerData) {
+                const k = k2dMakeKart(rd.id, rd.name, rd.char, rd.x, rd.y, rd.angle);
+                k2dKartMap[rd.id] = k;
+                if (rd.id === myPlayerId) k2dMyKart = k;
+            }
+
+            // Convert server timestamp → local performance.now() equivalent
+            k2dCountdownEnd = performance.now() + (startAt - Date.now());
+
+            hideAll();
+            const overlay = document.getElementById('kart-game-overlay');
+            overlay.style.display = '';
+            const canvas = document.getElementById('kart-canvas');
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+
+            k2dSetupInput();
+            k2dStartSync();
+            k2dLastTs = performance.now();
+            k2dRaf = requestAnimationFrame(k2dLoop);
+        }
+
+        // ── Score submission (host only) ──────────────────────────
+        function k2dSubmitScores() {
+            if (!k2dActive) return;
+            k2dCleanup();
+            const racers = k2dGetAllRacers();
+            const N = racers.length;
+            playerCounts = {};
+            racers.forEach(r => {
+                const pos = k2dFinishOrder.indexOf(r.id);
+                playerCounts[r.id] = pos >= 0 ? Math.max(1, N - pos) : 1;
+            });
+            autoSubmitScores();
+        }
+
+        // ── Cleanup ───────────────────────────────────────────────
+        function k2dCleanup() {
+            k2dActive = false;
+            k2dRaceStarted = false;
+            if (k2dRaf) { cancelAnimationFrame(k2dRaf); k2dRaf = null; }
+            k2dStopSync();
+            if (k2dFinishTimerId) { clearTimeout(k2dFinishTimerId); k2dFinishTimerId = null; }
+            clearInterval(k2dSelectTimer); k2dSelectTimer = null;
+            k2dTeardownInput();
+            const go = document.getElementById('kart-game-overlay');
+            if (go) go.style.display = 'none';
+        }
+
+        // Resize canvas if window changes while racing
+        window.addEventListener('resize', () => {
+            if (!k2dActive) return;
+            const canvas = document.getElementById('kart-canvas');
+            if (canvas && canvas.parentElement.style.display !== 'none') {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+            }
+        });
 
         // ═══════════════════════════════════════════════════════════════
         // EVENT WIRING
@@ -1929,6 +3075,20 @@
             navigator.clipboard.writeText(partyCode).then(() => showToast('Code copied!'));
         });
         document.getElementById('join-btn').addEventListener('click', guestJoinRoom);
+
+        // ── Kart2DE char-card selection ──
+        document.querySelectorAll('.char-card').forEach(card => {
+            card.addEventListener('click', () => {
+                const overlay = document.getElementById('kart-select-overlay');
+                if (!overlay || overlay.classList.contains('hidden') || isHost) return;
+                k2dPlayerSelectChar(card.dataset.char);
+            });
+        });
+
+        // ── Kart2DE force-end button ──
+        document.getElementById('kart-force-end-btn').addEventListener('click', () => {
+            if (k2dActive) k2dSubmitScores();
+        });
     </script>
 </body>
 
