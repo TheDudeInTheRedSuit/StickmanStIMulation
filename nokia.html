@@ -1668,7 +1668,8 @@
                 for (const team of teams) {
                     const key = 'team-' + team.id;
                     const teamTotal = team.members.reduce((sum, m) => sum + (playerCounts[m] || 0), 0);
-                    scores[key] = (scores[key] || 0) + teamTotal;
+                    const memberCount = team.members.length || 1;
+                    scores[key] = (scores[key] || 0) + Math.floor(teamTotal / memberCount);
                 }
             }
             for (const pid of soloPlayers) {
