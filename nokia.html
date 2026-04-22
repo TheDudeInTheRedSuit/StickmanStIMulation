@@ -1546,7 +1546,6 @@
         let myDetectionCount = 0;
         let recognition = null;
         let playerCounts = {}; // playerId -> count (host tracks)
-        let processedTranscriptLength = 0;
 
         function startGameAsHost(game) {
             if (game === '67spam') {
@@ -1587,7 +1586,6 @@
                 document.getElementById('my-count').textContent = '0';
 
                 myDetectionCount = 0;
-                processedTranscriptLength = 0;
 
                 // Start timer
                 gameTimeLeft = GAME_DURATION;
@@ -1685,6 +1683,21 @@
         // ─── SPEECH RECOGNITION ─────────────────────────────────
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 
+        // Broad regex: catches exact + phonetic mishearings of "six seven" in noisy environments
+        // six → six, sick, sex, sic | seven → seven, heaven
+        const SIX_SEVEN_RE = /\b(?:six|sick|sex|sic)\s*[-–]?\s*(?:seven|heaven)\b|\b67\b|(?<![0-9])6\s+7(?![0-9])/gi;
+
+        // Per-result-slot tracking for interim deduplication (resultIndex → count already added)
+        let interimAdded = {};
+
+        function flashCountDisplay() {
+            const el = document.getElementById('my-count');
+            el.style.transition = 'transform 0.15s, color 0.15s';
+            el.style.transform = 'scale(1.4)';
+            el.style.color = '#f1c40f';
+            setTimeout(() => { el.style.transform = ''; el.style.color = ''; }, 200);
+        }
+
         function startSpeechRecognition() {
             if (!SpeechRecognition) {
                 document.getElementById('mic-status').className = 'mic-status mic-error';
@@ -1692,22 +1705,38 @@
                 return;
             }
 
+            interimAdded = {};
+
             recognition = new SpeechRecognition();
             recognition.continuous = true;
-            recognition.interimResults = false;
+            recognition.interimResults = true;   // count as words arrive, don't wait for silence
+            recognition.maxAlternatives = 5;     // check top 5 hypotheses — noise can bury the match
             recognition.lang = 'en-US';
 
             recognition.onresult = (event) => {
                 for (let i = event.resultIndex; i < event.results.length; i++) {
-                    if (event.results[i].isFinal) {
-                        const transcript = event.results[i][0].transcript.toLowerCase();
-                        const matches = transcript.match(/six\s*(?:ty\s*)?seven|67|6\s*7/gi);
-                        if (matches) {
-                            myDetectionCount += matches.length;
-                            document.getElementById('my-count').textContent = myDetectionCount;
-                            sendMessage({ type: '67spam-count', playerId: myPlayerId, count: myDetectionCount, final: false });
-                        }
+                    const result = event.results[i];
+
+                    // Count matches across all alternatives, take the highest
+                    let maxMatches = 0;
+                    for (let alt = 0; alt < result.length; alt++) {
+                        const text = result[alt].transcript.toLowerCase();
+                        const m = text.match(SIX_SEVEN_RE);
+                        if (m && m.length > maxMatches) maxMatches = m.length;
                     }
+
+                    // Only ever increment — delta tracks new detections in this result slot
+                    const alreadyAdded = interimAdded[i] || 0;
+                    const delta = maxMatches - alreadyAdded;
+                    if (delta > 0) {
+                        myDetectionCount += delta;
+                        interimAdded[i] = alreadyAdded + delta;
+                        document.getElementById('my-count').textContent = myDetectionCount;
+                        flashCountDisplay();
+                        sendMessage({ type: '67spam-count', playerId: myPlayerId, count: myDetectionCount, final: false });
+                    }
+
+                    if (result.isFinal) delete interimAdded[i];
                 }
             };
 
@@ -1716,16 +1745,13 @@
                     document.getElementById('mic-status').className = 'mic-status mic-error';
                     document.getElementById('mic-status').textContent = '❌ Microphone access denied. Please allow mic access and reload.';
                 } else if (event.error !== 'aborted' && gameTimeLeft > 0) {
-                    // Auto-restart on transient errors
-                    setTimeout(() => {
-                        if (gameTimeLeft > 0) startSpeechRecognition();
-                    }, 500);
+                    setTimeout(() => { if (gameTimeLeft > 0) startSpeechRecognition(); }, 500);
                 }
             };
 
             recognition.onend = () => {
-                // Auto-restart if timer is still running
                 if (gameTimeLeft > 0) {
+                    interimAdded = {};
                     try { recognition.start(); } catch {}
                 }
             };
