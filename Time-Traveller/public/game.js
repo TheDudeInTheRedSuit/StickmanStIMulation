@@ -241,6 +241,7 @@ let totalTimeTravels = 0;
 let visitedScenarioIds = [];
 let selectedScenario = null;
 let lastResultDeltas = null;
+let scenarioCache = [];
 
 // ── HELPERS ───────────────────────────────────────────────────────────────────
 
@@ -327,6 +328,7 @@ function startGame() {
   const shuffled = [...allProblems].sort(() => Math.random() - 0.5);
   problems = shuffled.slice(0, 2 + rand(3));
   visitedScenarioIds = [];
+  prefetchScenarios();
   showIntro();
 }
 
@@ -396,13 +398,133 @@ document.getElementById('btn-fight-boss').addEventListener('click', () => {
   initBossFight();
 });
 
+// ── AI SCENARIOS ──────────────────────────────────────────────────────────────
+
+// Get a free key at aistudio.google.com — 1,500 requests/day on the free tier
+const GEMINI_API_KEY = 'AQ.Ab8RN6LMAsB9HvTokKmI4BHhsVkPODuTO5EwwoIUnCF5nr3u1g';
+const GEMINI_MODEL = 'gemini-1.5-flash';
+
+let prefetching = false;
+let genCount = 0;
+
+const PROBLEM_IDS = Object.keys(PROBLEMS);
+
+function makeStats(healthy) {
+  const result = {};
+  if (healthy) {
+    const a = pick(STAT_NAMES);
+    result[a] = [4 + rand(5), 3];
+    if (Math.random() > 0.4) { const b = pick(STAT_NAMES.filter(s => s !== a)); result[b] = [2 + rand(4), 2]; }
+    if (Math.random() > 0.65) { const c = pick(STAT_NAMES.filter(s => !result[s])); if (c) result[c] = [-(1 + rand(3)), 2]; }
+  } else {
+    const a = pick(STAT_NAMES);
+    result[a] = [-(4 + rand(6)), 3];
+    if (Math.random() > 0.4) { const b = pick(STAT_NAMES.filter(s => s !== a)); result[b] = [-(2 + rand(4)), 2]; }
+    if (Math.random() > 0.55) { const c = pick(STAT_NAMES.filter(s => !result[s])); if (c) result[c] = [2 + rand(3), 2]; }
+  }
+  return result;
+}
+
+function makeProblems(healthy) {
+  if (healthy) return Math.random() > 0.55 ? [[pick(PROBLEM_IDS), +(0.2 + Math.random() * 0.25).toFixed(2)]] : [];
+  const list = [[pick(PROBLEM_IDS), +(0.5 + Math.random() * 0.4).toFixed(2)]];
+  if (Math.random() > 0.5) list.push([pick(PROBLEM_IDS), +(0.25 + Math.random() * 0.3).toFixed(2)]);
+  return list;
+}
+
+function normalizeScenario(raw) {
+  return {
+    id: `ai_${++genCount}_${Date.now()}`,
+    age: Math.max(5, Math.min(40, Math.round(Number(raw.age) || 20))),
+    title: String(raw.title || 'A Moment'),
+    description: String(raw.description || ''),
+    aiGenerated: true,
+    choices: (Array.isArray(raw.choices) ? raw.choices.slice(0, 2) : []).map(c => ({
+      text: String(c.text || ''),
+      flavor: String(c.flavor || ''),
+      stats: makeStats(c.healthy !== false),
+      solve: [],
+      create: makeProblems(c.healthy !== false),
+    })),
+  };
+}
+
+const SCENARIO_SYSTEM_PROMPT = `You generate humorous life-choice scenarios for a time-travel RPG. The tone is dry British humour — deadpan, specific, and absurd, like a British comedy novel.
+
+Output a single JSON object with this exact structure and nothing else:
+{
+  "age": <integer 5-40>,
+  "title": "<short witty title, max 6 words>",
+  "description": "<2-3 sentences in second person using 'you', specific and funny>",
+  "choices": [
+    {
+      "text": "<choice text in first person, max 12 words>",
+      "flavor": "<1-2 sentences of what happens, dry humour>",
+      "healthy": <true or false>
+    },
+    {
+      "text": "<choice text in first person, max 12 words>",
+      "flavor": "<1-2 sentences of what happens, dry humour>",
+      "healthy": <true or false>
+    }
+  ]
+}`;
+
+async function fetchGeminiScenario() {
+  const resp = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        systemInstruction: { parts: [{ text: SCENARIO_SYSTEM_PROMPT }] },
+        contents: [{ parts: [{ text: 'Generate a life scenario.' }] }],
+        generationConfig: { responseMimeType: 'application/json', temperature: 0.95 },
+      }),
+    }
+  );
+  if (!resp.ok) return null;
+  const data = await resp.json();
+  const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+  if (!text) return null;
+  const raw = JSON.parse(text);
+  if (!raw.age || !raw.title || !Array.isArray(raw.choices) || raw.choices.length < 2) return null;
+  return normalizeScenario(raw);
+}
+
+async function fetchScenario() {
+  // Try local Ollama server first (when running via node server.js)
+  try {
+    const resp = await fetch('/api/scenario');
+    if (resp.ok) {
+      const s = await resp.json();
+      if (!s.error) return s;
+    }
+  } catch { /* server not running */ }
+
+  // Fall back to Gemini (GitHub Pages / no local server)
+  if (!GEMINI_API_KEY) return null;
+  try { return await fetchGeminiScenario(); } catch { return null; }
+}
+
+function prefetchScenarios() {
+  if (prefetching) return;
+  const needed = 6 - scenarioCache.length;
+  if (needed <= 0) return;
+  prefetching = true;
+  Promise.all(Array.from({ length: needed }, () => fetchScenario()))
+    .then(results => {
+      results.forEach(s => { if (s) scenarioCache.push(s); });
+      prefetching = false;
+    });
+}
+
 // ── TIME SELECT SCREEN ────────────────────────────────────────────────────────
 
-function showTimeSelectScreen() {
-  const shuffled = [...SCENARIOS].sort(() => Math.random() - 0.5).slice(0, 4);
+function renderScenarioCards(scenarios) {
   const container = document.getElementById('scenario-cards');
   container.innerHTML = '';
-  shuffled.forEach(scenario => {
+  scenarios.forEach(scenario => {
     const card = document.createElement('div');
     card.className = 'scenario-card';
     const visited = visitedScenarioIds.includes(scenario.id);
@@ -414,6 +536,24 @@ function showTimeSelectScreen() {
     card.addEventListener('click', () => showDecisionScreen(scenario));
     container.appendChild(card);
   });
+}
+
+function showTimeSelectScreen() {
+  const ai = scenarioCache.splice(0, 4);
+  let scenarios = ai;
+
+  if (scenarios.length < 4) {
+    const usedIds = new Set(scenarios.map(s => s.id));
+    const fallbacks = [...SCENARIOS]
+      .filter(s => !usedIds.has(s.id))
+      .sort(() => Math.random() - 0.5)
+      .slice(0, 4 - scenarios.length);
+    scenarios = [...scenarios, ...fallbacks].sort(() => Math.random() - 0.5);
+  }
+
+  if (scenarioCache.length < 3) prefetchScenarios();
+
+  renderScenarioCards(scenarios);
   showScreen('time-select');
 }
 
