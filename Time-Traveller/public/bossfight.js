@@ -26,7 +26,7 @@
       maxHp:    stats.health,
       healRate: stats.healing / 60,          // hp per second
       speed:    70  + stats.speed    * 2.9,  // px/s
-      jumpVel: -(255 + stats.agility * 3.5), // negative = upward
+      jumpVel: -(255 + stats.agility * 7.0), // negative = upward
       damage:   3   + stats.strength * 0.52, // per swing
       maxStam:  stats.stamina,
     };
