@@ -188,17 +188,35 @@ function saveAccounts(data) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
 }
 
-function loginAccount(name) {
+async function hashPassword(pw) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(pw));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+async function loginAccount(name, password) {
   const trimmed = name.trim();
   if (!trimmed) return null;
   const data = getAccounts();
   let account = data.accounts.find(a => a.name.toLowerCase() === trimmed.toLowerCase());
   const isNew = !account;
+
   if (isNew) {
-    account = { name: trimmed, xp: 0, timeTravels: 0, createdAt: new Date().toISOString() };
+    if (!password) return { error: 'Choose a password for your new account.' };
+    const passwordHash = await hashPassword(password);
+    account = { name: trimmed, xp: 0, timeTravels: 0, createdAt: new Date().toISOString(), passwordHash };
     data.accounts.push(account);
     saveAccounts(data);
+  } else {
+    if (account.passwordHash) {
+      const hash = await hashPassword(password);
+      if (hash !== account.passwordHash) return { error: 'Incorrect password.' };
+    } else if (password) {
+      // set password for existing passwordless accounts
+      account.passwordHash = await hashPassword(password);
+      saveAccounts(data);
+    }
   }
+
   return { account, isNew };
 }
 
@@ -268,8 +286,12 @@ function loadAccountsPanel() {
   });
 }
 
-function handleLogin() {
+async function handleLogin() {
   const name = document.getElementById('name-input').value.trim();
+  const password = document.getElementById('password-input').value;
+  const errorEl = document.getElementById('login-error');
+  errorEl.classList.add('hidden');
+
   if (!name) return;
 
   if (name.toLowerCase() === 'admin') {
@@ -277,8 +299,15 @@ function handleLogin() {
     return;
   }
 
-  const result = loginAccount(name);
+  const result = await loginAccount(name, password);
   if (!result) return;
+
+  if (result.error) {
+    errorEl.textContent = result.error;
+    errorEl.classList.remove('hidden');
+    return;
+  }
+
   player = result.account;
   totalXP = player.xp;
   totalTimeTravels = player.timeTravels || 0;
@@ -286,9 +315,8 @@ function handleLogin() {
 }
 
 document.getElementById('btn-login').addEventListener('click', handleLogin);
-document.getElementById('name-input').addEventListener('keydown', e => {
-  if (e.key === 'Enter') handleLogin();
-});
+document.getElementById('name-input').addEventListener('keydown', e => { if (e.key === 'Enter') handleLogin(); });
+document.getElementById('password-input').addEventListener('keydown', e => { if (e.key === 'Enter') handleLogin(); });
 
 // ── GAME START ────────────────────────────────────────────────────────────────
 
@@ -589,6 +617,37 @@ document.getElementById('btn-admin-back').addEventListener('click', () => {
   document.getElementById('name-input').value = '';
   loadAccountsPanel();
 });
+
+// ── LEADERBOARD ───────────────────────────────────────────────────────────────
+
+function showLeaderboard() {
+  const data = getAccounts();
+  const sorted = [...data.accounts].sort((a, b) => b.xp - a.xp);
+  const container = document.getElementById('leaderboard-list');
+  container.innerHTML = '';
+
+  if (sorted.length === 0) {
+    container.innerHTML = '<div class="lb-empty">No travellers yet.</div>';
+  } else {
+    const medals = ['✦', '✧', '◆'];
+    sorted.forEach((a, i) => {
+      const row = document.createElement('div');
+      row.className = 'lb-row' + (i < 3 ? ' lb-top' : '');
+      row.innerHTML = `
+        <span class="lb-rank${i < 3 ? ' gold' : ''}">${medals[i] || (i + 1) + '.'}</span>
+        <span class="lb-name">${a.name}</span>
+        <span class="lb-travels">${a.timeTravels || 0} travels</span>
+        <span class="lb-xp">✦ ${a.xp} XP</span>
+      `;
+      container.appendChild(row);
+    });
+  }
+
+  showScreen('leaderboard');
+}
+
+document.getElementById('btn-leaderboard').addEventListener('click', showLeaderboard);
+document.getElementById('btn-lb-back').addEventListener('click', () => showScreen('login'));
 
 // ── BOOT ──────────────────────────────────────────────────────────────────────
 

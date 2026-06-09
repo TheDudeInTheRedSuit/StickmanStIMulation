@@ -78,10 +78,12 @@ body {
 }
 
 /* ── INPUTS ── */
-.input-row { display: flex; gap: 0.6rem; }
+.input-stack { display: flex; flex-direction: column; gap: 0.5rem; }
+.login-btn-row { display: flex; gap: 0.6rem; }
 
-input[type="text"] {
-  flex: 1;
+input[type="text"],
+input[type="password"] {
+  width: 100%;
   background: rgba(0,0,0,0.35);
   border: 1px solid var(--border);
   border-radius: 3px;
@@ -92,8 +94,20 @@ input[type="text"] {
   outline: none;
   transition: border-color 0.15s;
 }
-input[type="text"]:focus { border-color: var(--gold); }
-input[type="text"]::placeholder { color: var(--text-muted); }
+input[type="text"]:focus,
+input[type="password"]:focus { border-color: var(--gold); }
+input[type="text"]::placeholder,
+input[type="password"]::placeholder { color: var(--text-muted); }
+
+.login-error {
+  color: var(--red);
+  font-size: 0.82rem;
+  font-family: 'Courier New', monospace;
+  padding: 0.4rem 0.75rem;
+  background: rgba(192,88,88,0.08);
+  border: 1px solid rgba(192,88,88,0.25);
+  border-radius: 2px;
+}
 
 /* ── BUTTONS ── */
 .btn-primary, .btn-ghost, .btn-boss, .choice-btn {
@@ -491,3 +505,46 @@ input[type="text"]::placeholder { color: var(--text-muted); }
 .boss-end.lost .boss-end-title { color: var(--red);  }
 .boss-end-sub  { color: var(--text-dim); font-style: italic; margin-bottom: 1rem; }
 .boss-end-xp   { color: var(--gold); font-size: 1.4rem; margin-bottom: 1.5rem; font-family: monospace; letter-spacing: 0.1em; }
+
+/* ── LEADERBOARD ── */
+.leaderboard-list { display: flex; flex-direction: column; gap: 0.4rem; }
+.lb-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background: var(--panel2);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 0.75rem 1rem;
+}
+.lb-row.lb-top { border-color: rgba(201,160,80,0.35); }
+.lb-rank {
+  font-family: 'Courier New', monospace;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  width: 22px;
+  text-align: center;
+  flex-shrink: 0;
+}
+.lb-rank.gold { color: var(--gold); }
+.lb-name { flex: 1; color: var(--text); font-size: 0.95rem; }
+.lb-travels {
+  font-family: 'Courier New', monospace;
+  font-size: 0.72rem;
+  color: var(--text-dim);
+  flex-shrink: 0;
+}
+.lb-xp {
+  font-family: 'Courier New', monospace;
+  font-size: 0.88rem;
+  color: var(--gold);
+  font-weight: bold;
+  flex-shrink: 0;
+}
+.lb-empty {
+  color: var(--text-dim);
+  font-style: italic;
+  font-size: 0.9rem;
+  padding: 1rem 0;
+  text-align: center;
+}

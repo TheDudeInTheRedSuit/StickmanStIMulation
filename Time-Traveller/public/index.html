@@ -16,9 +16,14 @@
         <h1>TIME TRAVELLER</h1>
         <p class="tagline">Every choice echoes through time.</p>
       </div>
-      <div class="input-row">
+      <div class="input-stack">
         <input id="name-input" type="text" placeholder="Enter your name..." maxlength="20" autocomplete="off" />
-        <button class="btn-primary" id="btn-login">BEGIN</button>
+        <input id="password-input" type="password" placeholder="Password..." maxlength="40" autocomplete="off" />
+        <div class="login-btn-row">
+          <button class="btn-primary" id="btn-login">BEGIN</button>
+          <button class="btn-ghost" id="btn-leaderboard">Leaderboard</button>
+        </div>
+        <div id="login-error" class="login-error hidden"></div>
       </div>
       <div id="accounts-list" class="accounts-list"></div>
     </div>
@@ -124,6 +129,17 @@
     <div class="boss-wrapper">
       <canvas id="boss-canvas"></canvas>
       <div id="boss-overlay" class="boss-overlay hidden"></div>
+    </div>
+  </div>
+
+  <!-- LEADERBOARD -->
+  <div id="screen-leaderboard" class="screen">
+    <div class="panel wide-panel">
+      <h2 class="screen-title">LEADERBOARD</h2>
+      <div id="leaderboard-list" class="leaderboard-list"></div>
+      <div class="btn-row">
+        <button class="btn-ghost" id="btn-lb-back">← Back</button>
+      </div>
     </div>
   </div>
 
