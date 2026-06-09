@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Time Traveller</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- LOGIN -->
+  <div id="screen-login" class="screen active">
+    <div class="panel login-panel">
+      <div class="logo">
+        <div class="logo-icon">⌛</div>
+        <h1>TIME TRAVELLER</h1>
+        <p class="tagline">Every choice echoes through time.</p>
+      </div>
+      <div class="input-row">
+        <input id="name-input" type="text" placeholder="Enter your name..." maxlength="20" autocomplete="off" />
+        <button class="btn-primary" id="btn-login">BEGIN</button>
+      </div>
+      <div id="accounts-list" class="accounts-list"></div>
+    </div>
+  </div>
+
+  <!-- INTRO -->
+  <div id="screen-intro" class="screen">
+    <div class="panel wide-panel">
+      <div class="screen-header">
+        <span class="player-name-display"></span>
+        <span class="xp-display">XP <span id="xp-val">0</span></span>
+      </div>
+      <h2 class="screen-title">YOUR PRESENT</h2>
+      <div id="intro-narrative" class="narrative-box"></div>
+      <p class="section-label">CURRENT PROBLEMS</p>
+      <div id="problem-list" class="problem-list"></div>
+      <div class="btn-row">
+        <button class="btn-primary" id="btn-to-stats">View Your Stats →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- STATS -->
+  <div id="screen-stats" class="screen">
+    <div class="panel wide-panel">
+      <div class="screen-header">
+        <span class="player-name-display"></span>
+        <span class="xp-display">XP <span id="xp-val2">0</span></span>
+      </div>
+      <h2 class="screen-title">YOUR STATS</h2>
+      <div id="stat-bars" class="stat-bars"></div>
+      <p class="section-label" style="margin-top:1.25rem">ACTIVE PROBLEMS</p>
+      <div id="active-problems" class="problem-list small"></div>
+      <div class="btn-row">
+        <button class="btn-primary" id="btn-time-travel">⌛ Travel Back in Time</button>
+        <button class="btn-boss hidden" id="btn-fight-boss">⚔ Fight the Boss</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TIME SELECT -->
+  <div id="screen-time-select" class="screen">
+    <div class="panel wide-panel">
+      <div class="screen-header">
+        <span class="player-name-display"></span>
+        <span class="xp-display">XP <span id="xp-val3">0</span></span>
+      </div>
+      <h2 class="screen-title">CHOOSE A MOMENT</h2>
+      <p class="subtitle">Pick a point in your past. You can change one decision.</p>
+      <div id="scenario-cards" class="scenario-cards"></div>
+      <div class="btn-row">
+        <button class="btn-ghost" id="btn-back-to-stats">← Back</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- DECISION -->
+  <div id="screen-decision" class="screen">
+    <div class="panel wide-panel">
+      <div class="screen-header">
+        <span class="player-name-display"></span>
+        <span class="xp-display">XP <span id="xp-val4">0</span></span>
+      </div>
+      <div id="decision-age" class="age-badge"></div>
+      <h2 id="decision-title" class="screen-title"></h2>
+      <p id="decision-description" class="narrative-box"></p>
+      <div id="decision-choices" class="decision-choices"></div>
+    </div>
+  </div>
+
+  <!-- RESULT -->
+  <div id="screen-result" class="screen">
+    <div class="panel wide-panel">
+      <div class="screen-header">
+        <span class="player-name-display"></span>
+        <span class="xp-display">XP <span id="xp-val5">0</span></span>
+      </div>
+      <h2 class="screen-title">BACK TO THE PRESENT</h2>
+      <div id="result-flavor" class="flavor-text"></div>
+      <div id="result-stat-changes" class="result-changes"></div>
+      <div id="result-problem-changes" class="result-problems"></div>
+      <div id="result-xp-gain" class="xp-gain"></div>
+      <div class="btn-row">
+        <button class="btn-primary" id="btn-continue">Continue →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADMIN -->
+  <div id="screen-admin" class="screen">
+    <div class="panel wide-panel">
+      <h2 class="screen-title">ADMIN PANEL</h2>
+      <p class="section-label" style="margin-bottom:1rem">ALL ACCOUNTS</p>
+      <div id="admin-accounts" class="admin-accounts"></div>
+      <div class="btn-row">
+        <button class="btn-ghost" id="btn-admin-back">← Back to Login</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- BOSS FIGHT -->
+  <div id="screen-boss" class="screen boss-screen">
+    <div class="boss-wrapper">
+      <canvas id="boss-canvas"></canvas>
+      <div id="boss-overlay" class="boss-overlay hidden"></div>
+    </div>
+  </div>
+
+  <!-- TRANSITION OVERLAY -->
+  <div id="transition-overlay" class="transition-overlay hidden">
+    <div class="transition-text">Travelling back in time...</div>
+  </div>
+
+  <script src="game.js"></script>
+  <script src="bossfight.js"></script>
+</body>
+</html>
